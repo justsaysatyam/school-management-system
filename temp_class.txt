@@ -1,0 +1,55 @@
+﻿{% extends 'base.html' %}
+{% block title %}Classes - Mid Point School{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">🏫</div>
+            <div>
+                <h2>Mid Point School</h2>
+            </div>
+        </div>
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item"><a href="{% url 'admin_dashboard' %}" class="nav-link"><span class="icon">📊</span>
+                        Dashboard</a></li>
+                <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link"><span class="icon">🎓</span>
+                        Students</a></li>
+                <li class="nav-item"><a href="{% url 'teacher_list' %}" class="nav-link"><span class="icon">👨‍🏫</span>
+                        Teachers</a></li>
+                <li class="nav-item"><a href="{% url 'class_list' %}" class="nav-link active"><span
+                            class="icon">🏛️</span> Classes</a></li>
+                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span
+                            class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">🏛️ Classes</h1><a href="{% url 'class_add' %}" class="btn btn-primary">➕ Add
+                Class</a>
+        </div>
+        {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{%
+        endfor %}{% endif %}
+        <div class="stats-grid">
+            {% for cls in classes %}
+            <div class="card">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3>{{ cls.class_name }} - {{ cls.section }}</h3>
+                        <p class="text-muted">Strength: {{ cls.strength }} students</p>
+                    </div>
+                    <a href="{% url 'class_delete' cls.pk %}" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Delete?')">Delete</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="card">
+                <p class="text-center text-muted">No classes yet. <a href="{% url 'class_add' %}">Add first class</a>
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+{% endblock %}
