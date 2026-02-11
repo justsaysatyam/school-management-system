@@ -101,8 +101,12 @@ else:
 
 # Safety check for Vercel deployment
 if IS_VERCEL and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
-    # Diagnostic: Print available relevant env keys (masked values for security)
+    # Diagnostic info
+    v_env = os.environ.get('VERCEL_ENV', 'unknown')
+    v_branch = os.environ.get('VERCEL_GIT_COMMIT_REF', 'unknown')
     relevant_keys = [k for k in os.environ.keys() if any(x in k for x in ['POSTGRES', 'DATABASE', 'URL', 'VERCEL'])]
+    
+    print(f"DIAGNOSTIC - Environment: {v_env}, Branch: {v_branch}")
     print(f"DIAGNOSTIC - Available environment keys: {relevant_keys}")
     
     # Allow build-time commands to pass (e.g., collectstatic)
@@ -110,15 +114,17 @@ if IS_VERCEL and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
     if not any(cmd in sys.argv for cmd in BUILD_COMMANDS):
         from django.core.exceptions import ImproperlyConfigured
         error_msg = (
-            "Vercel Deployment Error: Missing hosted database configuration.\n"
-            "SQLite is not supported on Vercel's read-only filesystem.\n"
-            "Available Relevant Env Keys: " + str(relevant_keys) + "\n\n"
+            f"Vercel Deployment Error: Missing hosted database configuration.\n"
+            f"Current Vercel Environment: {v_env}\n"
+            f"Current Branch: {v_branch}\n"
+            "SQLite is not supported on Vercel's read-only filesystem.\n\n"
+            "This usually happens because your database is only connected to the 'Production' environment.\n"
             "Please follow these steps:\n"
             "1. Go to your project on the Vercel Dashboard.\n"
-            "2. Navigate to the 'Storage' tab.\n"
-            "3. Create/Connect a 'Vercel Postgres' database.\n"
-            "4. Ensure it is connected to the environment you are deploying to (e.g., Production/Preview).\n"
-            "5. Redeploy your project to inject the environment variables."
+            "2. Navigate to the 'Storage' tab and click on your Postgres database.\n"
+            "3. Click 'Connect' (or 'Manage' -> 'Connect') and ensure 'Preview' is checked.\n"
+            "4. Alternatively, go to 'Settings' -> 'Environment Variables' and ensure 'DATABASE_URL' is enabled for 'Preview' and 'Production'.\n"
+            "5. Redeploy your project."
         )
         raise ImproperlyConfigured(error_msg)
 
