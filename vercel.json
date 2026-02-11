@@ -1,34 +1,25 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "school_management/wsgi.py",
-            "use": "@vercel/python",
-            "config": {
-                "maxLambdaSize": "15mb",
-                "runtime": "python3.12"
-            }
-        },
-        {
-            "src": "build_files.sh",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "staticfiles_build"
-            }
+    "buildCommand": "./build_files.sh",
+    "outputDirectory": "staticfiles_build",
+    "functions": {
+        "school_management/wsgi.py": {
+            "maxLambdaSize": "15mb",
+            "runtime": "python3.12"
         }
-    ],
-    "routes": [
+    },
+    "rewrites": [
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
+            "source": "/static/(.*)",
+            "destination": "/static/$1"
         },
         {
-            "src": "/media/(.*)",
-            "dest": "/media/$1"
+            "source": "/media/(.*)",
+            "destination": "/media/$1"
         },
         {
-            "src": "/(.*)",
-            "dest": "school_management/wsgi.py"
+            "source": "/(.*)",
+            "destination": "school_management/wsgi.py"
         }
     ]
 }
