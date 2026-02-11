@@ -15,5 +15,5 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'school_management.settings')
 
 application = get_wsgi_application()
 app = application
-handler = application
+
 
