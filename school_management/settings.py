@@ -81,12 +81,16 @@ else:
 
 
 if IS_VERCEL and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "Missing hosted database configuration for Vercel deployment. "
-        "SQLite is not supported in Vercel's read-only filesystem. "
-        "Please set up Vercel Postgres in the 'Storage' tab of your project and redeploy."
-    )
+    import sys
+    # Allow collectstatic and other build-time commands to pass
+    if 'collectstatic' not in sys.argv and 'generate' not in sys.argv:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "Missing hosted database configuration for Vercel deployment. "
+            "SQLite is not supported in Vercel's read-only filesystem. "
+            "Please set up Vercel Postgres in the 'Storage' tab of your project and redeploy."
+        )
+
 
 
 
