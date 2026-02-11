@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "buildCommand": "./build_files.sh",
+    "buildCommand": "bash build_files.sh",
     "outputDirectory": "staticfiles_build",
     "rewrites": [
         {
