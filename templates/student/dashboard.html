@@ -113,6 +113,47 @@
             </div>
         </div>
 
+        <!-- Examination Results -->
+        <div class="card mt-3 animate-slideUp" style="animation-delay: 0.2s;">
+            <div class="card-header">
+                <h3 class="card-title">📝 My Examination Results</h3>
+            </div>
+            <div class="table-container" style="box-shadow: none;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Subject</th>
+                            <th>Marks</th>
+                            <th>Grade</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ result.exam_name }}</td>
+                            <td>{{ result.subject.subject_name }}</td>
+                            <td>{{ result.marks_obtained }} / {{ result.total_marks }} ({{
+                                result.percentage|floatformat:1 }}%)</td>
+                            <td>
+                                <span class="badge"
+                                    style="background: {% if result.grade == 'A+' or result.grade == 'A' %}#10b981{% elif result.grade == 'B+' or result.grade == 'B' %}#3b82f6{% elif result.grade == 'C' %}#f59e0b{% else %}#ef4444{% endif %}; color: white;">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                            <td>{{ result.exam_date|date:"M d, Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No verified results yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- School Info -->
         <div class="card mt-3">
             <div class="card-header">

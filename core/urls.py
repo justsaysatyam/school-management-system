@@ -64,12 +64,17 @@ urlpatterns = [
     
     # Results Management
     path('results/', views.result_list, name='result_list'),
+    path('results/pdf/<int:student_id>/', views.result_pdf, name='result_pdf'),
     path('teacher/results/submit/', views.result_submit, name='result_submit'),
     path('teacher/results/<int:pk>/edit/', views.result_edit, name='result_edit'),
     path('admin/results/verify/', views.result_verify, name='result_verify'),
     path('admin/results/<int:pk>/approve/', views.result_approve, name='result_approve'),
     path('admin/results/<int:pk>/reject/', views.result_reject, name='result_reject'),
     path('admin/results/<int:pk>/delete/', views.result_delete, name='result_delete'),
+    
+    # Result PDF Download (Teacher Portal)
+    path('teacher/results/download/', views.result_download, name='result_download'),
+    path('teacher/results/pdf/<int:student_id>/', views.result_pdf, name='teacher_result_pdf'),
     
     # Gallery Management
     path('admin/gallery/', views.gallery_list, name='gallery_list'),

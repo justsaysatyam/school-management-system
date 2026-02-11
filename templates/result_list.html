@@ -185,6 +185,96 @@
         font-size: 1.2rem;
     }
 
+    /* Download PDF Section */
+    .download-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(79, 172, 254, 0.3);
+    }
+
+    .download-section h2 {
+        color: #4facfe;
+        margin: 0 0 0.5rem 0;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .download-section p {
+        color: #666;
+        margin: 0 0 1.5rem 0;
+        font-size: 0.95rem;
+    }
+
+    .download-form {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .download-form .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .download-form .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9rem;
+    }
+
+    .download-form .form-group select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .download-form .form-group select:focus {
+        outline: none;
+        border-color: #4facfe;
+    }
+
+    .btn-download {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+
+    .btn-download:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-download:disabled,
+    .btn-download.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        pointer-events: none;
+    }
+
     @media (max-width: 768px) {
         table {
             font-size: 0.9rem;
@@ -193,6 +283,10 @@
         th,
         td {
             padding: 0.6rem;
+        }
+
+        .download-form {
+            flex-direction: column;
         }
     }
 </style>
@@ -205,6 +299,37 @@
         <p style="margin: 0; color: #666;">Verified examination results</p>
     </div>
 
+    <!-- Download Result PDF Section -->
+    <div class="download-section">
+        <h2>📄 Download Result PDF</h2>
+        <p>Select a student and exam to generate a complete marksheet with all subject marks in one PDF</p>
+        <div class="download-form">
+            <div class="form-group">
+                <label for="pdf_student">👨‍🎓 Select Student</label>
+                <select id="pdf_student" onchange="updateDownloadBtn()">
+                    <option value="">-- Choose Student --</option>
+                    {% for s in students_with_results %}
+                    <option value="{{ s.id }}">{{ s.name }} — {{ s.student_class|default:"No Class" }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pdf_exam">📝 Select Exam</label>
+                <select id="pdf_exam" onchange="updateDownloadBtn()">
+                    <option value="">-- Choose Exam --</option>
+                    {% for exam in exam_names %}
+                    <option value="{{ exam }}">{{ exam }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="flex: 0; min-width: auto;">
+                <a href="#" id="downloadBtn" class="btn-download disabled" target="_blank">
+                    📄 Generate PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="filters">
         <form method="GET" style="display: contents;">
             <div class="filter-group">
@@ -212,7 +337,7 @@
                 <select name="class" id="classfilter" onchange="this.form.submit()">
                     <option value="">All Classes</option>
                     {% for cls in classes %}
-                    <option value="{{ cls.id }}" {% if selected_class  ==  cls.id %}selected{% endif %}>
+                    <option value="{{ cls.id }}" {% if selected_class == cls.id %}selected{% endif %}>
                         {{ cls.class_name }} - {{ cls.section }}
                     </option>
                     {% endfor %}
@@ -224,7 +349,7 @@
                 <select name="exam" id="examfilter" onchange="this.form.submit()">
                     <option value="">All Exams</option>
                     {% for exam in exam_names %}
-                    <option value="{{ exam }}" {% if selected_exam  ==  exam %}selected{% endif %}>
+                    <option value="{{ exam }}" {% if selected_exam == exam %}selected{% endif %}>
                         {{ exam }}
                     </option>
                     {% endfor %}
@@ -285,5 +410,21 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    function updateDownloadBtn() {
+        const studentId = document.getElementById('pdf_student').value;
+        const examName = document.getElementById('pdf_exam').value;
+        const btn = document.getElementById('downloadBtn');
+
+        if (studentId && examName) {
+            btn.href = `/results/pdf/${studentId}/?exam=${encodeURIComponent(examName)}`;
+            btn.classList.remove('disabled');
+        } else {
+            btn.href = '#';
+            btn.classList.add('disabled');
+        }
+    }
+</script>
 
 {% endblock %}

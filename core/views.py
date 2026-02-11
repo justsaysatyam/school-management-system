@@ -26,15 +26,9 @@ def home(request):
     # Get gallery images
     gallery_images = GalleryImage.objects.filter(is_active=True)[:8]
     
-    # Get recent verified results
-    recent_results = Result.objects.filter(verification_status='Verified').select_related(
-        'student', 'subject', 'student__student_class'
-    )[:10]
-    
     context = {
         'school_info': school_info,
         'gallery_images': gallery_images,
-        'recent_results': recent_results,
     }
     return render(request, 'home.html', context)
 
@@ -635,11 +629,15 @@ def student_dashboard(request):
     # Active notices for students
     notices = Notice.objects.filter(is_active=True, audience__in=['All', 'Students'])[:5]
     
+    # Get student's verified results
+    results = Result.objects.filter(student=student, verification_status='Verified').select_related('subject').order_by('-exam_date')
+    
     context = {
         'student': student,
         'total_paid': total_paid,
         'total_due': total_due,
         'recent_payments': recent_payments,
+        'results': results,
         'notices': notices,
         'school_info': {
             'name': 'Mid Point School',
@@ -898,12 +896,18 @@ def result_list(request):
     classes = SchoolClass.objects.all()
     exam_names = Result.objects.filter(verification_status='Verified').values_list('exam_name', flat=True).distinct()
     
+    # Get students who have verified results (for PDF download section)
+    students_with_results = Student.objects.filter(
+        results__verification_status='Verified'
+    ).distinct().order_by('student_class__class_name', 'name')
+    
     context = {
         'results': results,
         'classes': classes,
         'exam_names': exam_names,
         'selected_class': selected_class_id,
         'selected_exam': exam_name,
+        'students_with_results': students_with_results,
     }
     return render(request, 'result_list.html', context)
 
@@ -1069,6 +1073,90 @@ def result_delete(request, pk):
     
     messages.success(request, f'Result for {student_name} deleted')
     return redirect('result_verify')
+
+
+# ===================== RESULT PDF DOWNLOAD (Teacher Portal) =====================
+
+def result_download(request):
+    """Teacher view to select student and exam for result PDF download"""
+    if request.session.get('user_type') != 'teacher':
+        return redirect('teacher_login')
+    
+    teacher_id = request.session.get('teacher_id')
+    teacher = get_object_or_404(Teacher, pk=teacher_id)
+    
+    # Get students based on teacher's class or all students
+    if teacher.class_section:
+        students = Student.objects.filter(student_class=teacher.class_section, is_active=True)
+    else:
+        students = Student.objects.filter(is_active=True)
+    
+    # Get distinct exam names from verified results
+    exam_names = Result.objects.filter(
+        verification_status='Verified'
+    ).values_list('exam_name', flat=True).distinct()
+    
+    # Get actual SchoolClass objects for better filtering
+    classes = SchoolClass.objects.all().order_by('class_name', 'section')
+    
+    context = {
+        'teacher': teacher,
+        'students': students,
+        'exam_names': exam_names,
+        'classes': classes,
+    }
+    return render(request, 'teacher/result_download.html', context)
+
+
+def result_pdf(request, student_id):
+    """Generate printable result PDF for a student - public access"""
+    student = get_object_or_404(Student, pk=student_id)
+    
+    exam_name = request.GET.get('exam', '')
+    
+    # Get all verified results for this student and exam
+    results = Result.objects.filter(
+        student=student,
+        exam_name=exam_name,
+        verification_status='Verified'
+    ).select_related('subject').order_by('subject__subject_name')
+    
+    # Calculate overall totals
+    total_marks_obtained = sum(r.marks_obtained for r in results)
+    total_marks_total = sum(r.total_marks for r in results)
+    overall_percentage = (total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0
+    
+    # Calculate overall grade
+    if overall_percentage >= 90:
+        overall_grade = 'A+'
+    elif overall_percentage >= 80:
+        overall_grade = 'A'
+    elif overall_percentage >= 70:
+        overall_grade = 'B+'
+    elif overall_percentage >= 60:
+        overall_grade = 'B'
+    elif overall_percentage >= 50:
+        overall_grade = 'C'
+    elif overall_percentage >= 40:
+        overall_grade = 'D'
+    else:
+        overall_grade = 'F'
+    
+    # Determine pass/fail status
+    result_status = 'PASS' if overall_percentage >= 40 else 'FAIL'
+    
+    context = {
+        'student': student,
+        'exam_name': exam_name,
+        'results': results,
+        'total_marks_obtained': total_marks_obtained,
+        'total_marks_total': total_marks_total,
+        'overall_percentage': overall_percentage,
+        'overall_grade': overall_grade,
+        'result_status': result_status,
+        'total_subjects': results.count(),
+    }
+    return render(request, 'teacher/student_result_pdf.html', context)
 
 
 # ===================== GALLERY MANAGEMENT =====================
