@@ -104,27 +104,28 @@ if IS_VERCEL and DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
     # Diagnostic info
     v_env = os.environ.get('VERCEL_ENV', 'unknown')
     v_branch = os.environ.get('VERCEL_GIT_COMMIT_REF', 'unknown')
-    relevant_keys = [k for k in os.environ.keys() if any(x in k for x in ['POSTGRES', 'DATABASE', 'URL', 'VERCEL'])]
     
-    print(f"DIAGNOSTIC - Environment: {v_env}, Branch: {v_branch}")
-    print(f"DIAGNOSTIC - Available environment keys: {relevant_keys}")
+    # Let's see ALL keys that are NOT internal Vercel/System ones to find if user mistyped something
+    all_keys = sorted(os.environ.keys())
+    user_keys = [k for k in all_keys if not k.startswith(('VERCEL_', 'AWS_', 'LAMBDA_', '_', 'PATH', 'PWD', 'HOME', 'LANG'))]
+    vercel_keys = [k for k in all_keys if k.startswith('VERCEL_')]
+    
+    print(f"DIAGNOSTIC - Env: {v_env}, Branch: {v_branch}")
+    print(f"DIAGNOSTIC - User defined/Integration keys: {user_keys}")
+    print(f"DIAGNOSTIC - Vercel keys: {vercel_keys}")
     
     # Allow build-time commands to pass (e.g., collectstatic)
     BUILD_COMMANDS = ['collectstatic', 'generate']
     if not any(cmd in sys.argv for cmd in BUILD_COMMANDS):
         from django.core.exceptions import ImproperlyConfigured
         error_msg = (
-            f"Vercel Deployment Error: Missing hosted database configuration.\n"
+            f"Vercel Deployment Error: No database variables found.\n"
             f"Current Vercel Environment: {v_env}\n"
             f"Current Branch: {v_branch}\n"
-            "SQLite is not supported on Vercel's read-only filesystem.\n\n"
-            "This usually happens because your database is only connected to the 'Production' environment.\n"
-            "Please follow these steps:\n"
-            "1. Go to your project on the Vercel Dashboard.\n"
-            "2. Navigate to the 'Storage' tab and click on your Postgres database.\n"
-            "3. Click 'Connect' (or 'Manage' -> 'Connect') and ensure 'Preview' is checked.\n"
-            "4. Alternatively, go to 'Settings' -> 'Environment Variables' and ensure 'DATABASE_URL' is enabled for 'Preview' and 'Production'.\n"
-            "5. Redeploy your project."
+            f"Non-system keys found: {user_keys}\n\n"
+            "CRITICAL: We did NOT find 'POSTGRES_URL' or 'DATABASE_URL' in your environment.\n"
+            "Please check your Vercel Project Settings -> Environment Variables.\n"
+            "If they are missing there, you MUST manually add 'POSTGRES_URL' as a variable."
         )
         raise ImproperlyConfigured(error_msg)
 
