@@ -6,7 +6,11 @@ Mid Point School - School Management System
 from pathlib import Path
 import os
 import sys
-import dj_database_url
+# Import dj_database_url conditionally is better for local dev if not installed
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -74,7 +78,7 @@ db_url = (
     os.environ.get('POSTGRES_PRISMA_URL')
 )
 
-if db_url:
+if db_url and dj_database_url:
     DATABASES = {
         'default': dj_database_url.parse(db_url, conn_max_age=600, conn_health_checks=True)
     }
