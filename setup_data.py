@@ -16,7 +16,7 @@ if not Admin.objects.filter(email=admin_email).exists():
         name='Admin User',
         email=admin_email,
         phone='7762044304',
-        address='Barahiya, Ward No. 04, Lakhisarai, Bihar',
+        address='Barahiya, Near Hanuman Temple',
         role='Administrator'
     )
     admin.set_password('admin123')

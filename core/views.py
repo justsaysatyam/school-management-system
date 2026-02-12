@@ -86,17 +86,26 @@ def student_login(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            try:
-                student = Student.objects.get(email=email, is_active=True)
-                if student.check_password(password):
-                    request.session['student_id'] = student.id
+            
+            # Use filter instead of get to handle multiple students with same email (e.g. siblings)
+            students = Student.objects.filter(email=email, is_active=True)
+            
+            if not students.exists():
+                messages.error(request, 'Student not found')
+            else:
+                found_student = None
+                for student in students:
+                    if student.check_password(password):
+                        found_student = student
+                        break
+                
+                if found_student:
+                    request.session['student_id'] = found_student.id
                     request.session['user_type'] = 'student'
-                    request.session['user_name'] = student.name
+                    request.session['user_name'] = found_student.name
                     return redirect('student_dashboard')
                 else:
                     messages.error(request, 'Invalid password')
-            except Student.DoesNotExist:
-                messages.error(request, 'Student not found')
     else:
         form = LoginForm()
     return render(request, 'student/login.html', {'form': form})
@@ -641,7 +650,7 @@ def student_dashboard(request):
         'notices': notices,
         'school_info': {
             'name': 'Mid Point School',
-            'address': 'Barahiya, Ward No. 04, Lakhisarai, Bihar',
+            'address': 'Barahiya, Near Hanuman Temple',
             'contact': '6202822415',
             'email': 'bssingtechenterprieses@gmail.com'
         }
@@ -672,7 +681,7 @@ def student_profile(request):
         'student': student,
         'school_info': {
             'name': 'Mid Point School',
-            'address': 'Barahiya, Ward No. 04, Lakhisarai, Bihar',
+            'address': 'Barahiya, Near Hanuman Temple',
             'contact': '6202822415',
             'email': 'bssingtechenterprieses@gmail.com'
         }

@@ -283,7 +283,7 @@ class Exam(models.Model):
 class SchoolInfo(models.Model):
     """School information and configuration"""
     school_name = models.CharField(max_length=200, default='Mid Point School')
-    address = models.TextField(default='Barahiya, Ward No. 04, Lakhisarai, Bihar')
+    address = models.TextField(default='Barahiya, Near Hanuman Temple')
     contact_number = models.CharField(max_length=15, default='7762044304')
     email = models.EmailField(default='bssingtechenterprieses@gmail.com')
     principal_name = models.CharField(max_length=100, default='Raja Ram Kumar')
