@@ -22,7 +22,7 @@ SECRET_KEY = 'django-insecure-(5w%d1g^st1z2^#ov6dzmmu%qdq63o-#x#)z0ly&g^_5afp@-u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['midpointschoolmanage.pythonanywhere.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['midpointschoolmanage.pythonanywhere.com', 'localhost', '127.0.0.1', '.vercel.app']
 
 # Application definition
 INSTALLED_APPS = [
@@ -117,4 +117,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Session settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 hours
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
