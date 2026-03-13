@@ -2,8 +2,8 @@
     "version": 2,
     "builds": [
         {
-            "src": "school_management/wsgi.py",
-            "use": "@vercel/python",
+            "src": "package.json",
+            "use": "@vercel/static-build",
             "config": {
                 "maxLambdaSize": "15mb",
                 "runtime": "python3.12"
