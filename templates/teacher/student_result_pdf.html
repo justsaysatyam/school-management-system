@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -464,7 +465,10 @@
     <div class="result-sheet">
         <!-- School Header -->
         <div class="school-header">
-            <h1>🏫 Mid Point School</h1>
+            <h1>
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 45px; width: 45px; vertical-align: middle; margin-right: 15px; border-radius: 50%; background: white; object-fit: cover;">
+                Mid Point School
+            </h1>
             <div class="address">Barahiya, Near Hanuman Temple</div>
             <div class="exam-title">📋 {{ exam_name }}</div>
         </div>

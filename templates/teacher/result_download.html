@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Download Result PDF{% endblock %}
+{% block title %}Download Results - Mid Point School{% endblock %}
 
 {% block body %}
 <style>
@@ -182,7 +183,10 @@
     <a href="{% url 'teacher_dashboard' %}" class="back-link">← Back to Dashboard</a>
 
     <div class="page-header">
-        <h1>📄 Download Result PDF</h1>
+        <h1>
+            <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            Download Result PDF
+        </h1>
         <p>Generate a printable result sheet with all subject marks</p>
     </div>
 

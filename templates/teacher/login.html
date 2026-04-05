@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Teacher Login - Mid Point School{% endblock %}
 {% block body %}
 <div class="login-page">
     <div class="login-container animate-fadeIn">
         <div class="login-card">
             <div class="login-header">
-                <div class="logo">👨‍🏫</div>
+                <div class="logo">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 60px; width: auto;">
+                </div>
                 <h1>Teacher Login</h1>
                 <p>Mid Point School - Staff Portal</p>
             </div>

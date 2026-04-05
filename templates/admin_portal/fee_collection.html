@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Fee Collection - Mid Point School{% endblock %}
 
@@ -6,7 +7,9 @@
 <div class="dashboard-layout">
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">🏫</div>
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
             <div>
                 <h2>Mid Point School</h2>
             </div>
@@ -86,7 +89,12 @@
                         <td><span
                                 class="badge badge-{% if payment.status == 'Paid' %}success{% elif payment.status == 'Pending' %}warning{% else %}info{% endif %}">{{
                                 payment.status }}</span></td>
-                        <td><a href="{% url 'fee_edit' payment.pk %}" class="btn btn-sm btn-outline">Edit</a></td>
+                        <td>
+                            <div class="flex gap-1">
+                                <a href="{% url 'fee_edit' payment.pk %}" class="btn btn-sm btn-outline">Edit</a>
+                                <a href="{% url 'fee_receipt_pdf' payment.pk %}" class="btn btn-sm btn-primary" title="Download Receipt">📄 Receipt</a>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>

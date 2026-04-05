@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Notices - Mid Point School{% endblock %}
 
@@ -6,7 +7,9 @@
 <div class="dashboard-layout">
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">🏫</div>
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
             <div>
                 <h2>Mid Point School</h2>
             </div>

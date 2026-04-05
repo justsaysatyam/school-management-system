@@ -6,13 +6,14 @@ from decimal import Decimal
 from .models import (
     Admin, Teacher, Student, SchoolClass, Subject,
     TeacherPayment, StudentPayment, TeacherAttendance, StudentAttendance,
-    Notice, Event, Exam, SchoolInfo, GalleryImage, Result
+    Notice, Event, Exam, SchoolInfo, GalleryImage, Result, Complaint, Inquiry
 )
 from .forms import (
     LoginForm, TeacherForm, StudentForm, TeacherPaymentForm, 
-    StudentPaymentForm, NoticeForm, ClassForm, SubjectForm
+    StudentPaymentForm, NoticeForm, ClassForm, SubjectForm,
+    ComplaintForm, ComplaintResolveForm, InquiryForm
 )
-
+from django.contrib.auth.hashers import make_password
 
 # ===================== HOME & AUTH =====================
 
@@ -26,9 +27,23 @@ def home(request):
     # Get gallery images
     gallery_images = GalleryImage.objects.filter(is_active=True)[:8]
     
+    if request.method == 'POST' and 'inquiry_submit' in request.POST:
+        form = InquiryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your inquiry has been submitted successfully. We will contact you soon!')
+            return redirect('home')
+    else:
+        form = InquiryForm()
+    
+    # Get recent results for public view
+    recent_results = Result.objects.filter(verification_status='Verified').select_related('student', 'subject', 'student__student_class')[:5]
+    
     context = {
         'school_info': school_info,
         'gallery_images': gallery_images,
+        'form': form,
+        'recent_results': recent_results,
     }
     return render(request, 'home.html', context)
 
@@ -42,6 +57,11 @@ def admin_login(request):
             password = form.cleaned_data['password']
             try:
                 admin = Admin.objects.get(email=email)
+                print("==============================================")
+                print(password)
+                print("Hash for " , password," is ", make_password(password))
+                print(admin.password)
+                ("==============================================")
                 if admin.check_password(password):
                     request.session['admin_id'] = admin.id
                     request.session['user_type'] = 'admin'
@@ -258,12 +278,25 @@ def student_delete(request, pk):
 
 
 def student_id_card(request, pk):
-    """Generate printable student ID card"""
+    """Admin view to generate student ID card"""
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
     student = get_object_or_404(Student, pk=pk)
     return render(request, 'admin_portal/student_id_card.html', {'student': student})
+
+
+def teacher_id_card(request, pk):
+    """Admin view to generate teacher ID card"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    teacher = get_object_or_404(Teacher, pk=pk)
+    school_info = SchoolInfo.objects.first()
+    return render(request, 'admin_portal/teacher_id_card.html', {
+        'teacher': teacher,
+        'school_info': school_info
+    })
 
 
 # ===================== TEACHER MANAGEMENT =====================
@@ -615,6 +648,45 @@ def class_delete(request, pk):
     school_class.delete()
     messages.success(request, 'Class deleted successfully')
     return redirect('class_list')
+
+
+# ===================== SUBJECT MANAGEMENT =====================
+
+def subject_list(request):
+    """List all subjects"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    subjects = Subject.objects.all()
+    return render(request, 'admin_portal/subject_list.html', {'subjects': subjects})
+
+
+def subject_add(request):
+    """Add new subject"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    if request.method == 'POST':
+        form = SubjectForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Subject added successfully')
+            return redirect('subject_list')
+    else:
+        form = SubjectForm()
+    
+    return render(request, 'admin_portal/subject_form.html', {'form': form, 'title': 'Add Subject'})
+
+
+def subject_delete(request, pk):
+    """Delete subject"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    subject = get_object_or_404(Subject, pk=pk)
+    subject.delete()
+    messages.success(request, 'Subject deleted successfully')
+    return redirect('subject_list')
 
 
 # ===================== STUDENT PORTAL =====================
@@ -1117,6 +1189,109 @@ def result_download(request):
     return render(request, 'teacher/result_download.html', context)
 
 
+# ===================== COMPLAINT MANAGEMENT =====================
+
+def student_complaints(request):
+    """Student view to list and submit complaints"""
+    if request.session.get('user_type') != 'student':
+        return redirect('student_login')
+    
+    student_id = request.session.get('student_id')
+    student = get_object_or_404(Student, pk=student_id)
+    
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.student = student
+            complaint.save()
+            messages.success(request, 'Complaint submitted successfully')
+            return redirect('student_complaints')
+    else:
+        form = ComplaintForm()
+    
+    complaints = Complaint.objects.filter(student=student).order_by('-created_at')
+    
+    context = {
+        'student': student,
+        'complaints': complaints,
+        'form': form
+    }
+    return render(request, 'student/complaints.html', context)
+
+
+def admin_complaint_list(request):
+    """Admin view to see all student complaints"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    complaints = Complaint.objects.all().select_related('student', 'student__student_class')
+    
+    # Filter by status
+    status_filter = request.GET.get('status')
+    if status_filter:
+        complaints = complaints.filter(status=status_filter)
+    
+    context = {
+        'complaints': complaints,
+        'selected_status': status_filter
+    }
+    return render(request, 'admin_portal/complaint_list.html', context)
+
+
+def admin_complaint_resolve(request, pk):
+    """Admin view to resolve a complaint"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    complaint = get_object_or_404(Complaint, pk=pk)
+    
+    if request.method == 'POST':
+        form = ComplaintResolveForm(request.POST, instance=complaint)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            if complaint.status in ['Resolved', 'Closed'] and not complaint.resolved_at:
+                complaint.resolved_at = timezone.now()
+            complaint.save()
+            messages.success(request, 'Complaint status updated successfully')
+            return redirect('admin_complaint_list')
+    else:
+        form = ComplaintResolveForm(instance=complaint)
+    
+    context = {
+        'complaint': complaint,
+        'form': form
+    }
+    return render(request, 'admin_portal/complaint_resolve.html', context)
+
+
+def admin_inquiry_list(request):
+    """Admin view to see public inquiries"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    inquiries = Inquiry.objects.all()
+    
+    # Mark all as read when admin visits
+    inquiries.filter(is_read=False).update(is_read=True)
+    
+    context = {
+        'inquiries': inquiries
+    }
+    return render(request, 'admin_portal/inquiry_list.html', context)
+
+
+def admin_inquiry_delete(request, pk):
+    """Admin view to delete an inquiry"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    inquiry = get_object_or_404(Inquiry, pk=pk)
+    inquiry.delete()
+    messages.success(request, 'Inquiry deleted successfully')
+    return redirect('admin_inquiry_list')
+
+
 def result_pdf(request, student_id):
     """Generate printable result PDF for a student - public access"""
     student = get_object_or_404(Student, pk=student_id)
@@ -1166,6 +1341,30 @@ def result_pdf(request, student_id):
         'total_subjects': results.count(),
     }
     return render(request, 'teacher/student_result_pdf.html', context)
+
+
+def fee_receipt_pdf(request, payment_id):
+    """Generate printable fee receipt PDF"""
+    # Permission check: Admin or the student who made the payment
+    user_type = request.session.get('user_type')
+    student_id = request.session.get('student_id')
+    
+    payment = get_object_or_404(StudentPayment, pk=payment_id)
+    
+    if user_type == 'admin':
+        # Admin can view any receipt
+        pass
+    elif user_type == 'student' and student_id == payment.student_id:
+        # Student can only view their own receipt
+        pass
+    else:
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+        
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'student/fee_receipt_pdf.html', context)
 
 
 # ===================== GALLERY MANAGEMENT =====================

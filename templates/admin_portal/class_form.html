@@ -1,10 +1,13 @@
-{% extends 'base.html' %}
+{% extends 'admin_portal/dashboard.html' %}
+{% load static %}
 {% block title %}Add Class - Mid Point School{% endblock %}
 {% block body %}
 <div class="dashboard-layout">
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">🏫</div>
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
             <div>
                 <h2>Mid Point School</h2>
             </div>

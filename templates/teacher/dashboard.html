@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Teacher Dashboard - Mid Point School{% endblock %}
 {% block body %}
 <div class="dashboard-layout">
     <aside class="sidebar" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);">
         <div class="sidebar-brand">
-            <div class="brand-icon">👨‍🏫</div>
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
             <div>
                 <h2>Teacher Portal</h2><small style="opacity: 0.7;">{{ teacher.name }}</small>
             </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Teachers - Mid Point School{% endblock %}
 
@@ -7,7 +8,9 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">🏫</div>
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
             <div>
                 <h2>Mid Point School</h2>
                 <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
@@ -31,6 +34,16 @@
                 <li class="nav-item">
                     <a href="{% url 'teacher_list' %}" class="nav-link active">
                         <span class="icon">👨‍🏫</span> Teachers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'admin_complaint_list' %}" class="nav-link">
+                        <span class="icon">📥</span> Complaints
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'admin_inquiry_list' %}" class="nav-link">
+                        <span class="icon">❓</span> Inquiries
                     </a>
                 </li>
                 <li class="nav-item">
@@ -109,6 +122,7 @@
                         <td>
                             <div class="flex gap-1">
                                 <a href="{% url 'teacher_edit' teacher.pk %}" class="btn btn-sm btn-outline">Edit</a>
+                                <a href="{% url 'teacher_id_card' teacher.pk %}" class="btn btn-sm btn-primary" title="ID Card">🪪</a>
                                 <a href="{% url 'teacher_delete' teacher.pk %}" class="btn btn-sm btn-danger"
                                     onclick="return confirm('Are you sure you want to delete this teacher?')">Delete</a>
                             </div>

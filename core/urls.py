@@ -18,6 +18,7 @@ urlpatterns = [
     path('admin/students/<int:pk>/edit/', views.student_edit, name='student_edit'),
     path('admin/students/<int:pk>/delete/', views.student_delete, name='student_delete'),
     path('admin/students/<int:pk>/id-card/', views.student_id_card, name='student_id_card'),
+    path('admin/teachers/<int:pk>/id-card/', views.teacher_id_card, name='teacher_id_card'),
     
     # Teacher Management (Admin)
     path('admin/teachers/', views.teacher_list, name='teacher_list'),
@@ -29,6 +30,7 @@ urlpatterns = [
     path('admin/fees/', views.fee_collection, name='fee_collection'),
     path('admin/fees/add/', views.fee_add, name='fee_add'),
     path('admin/fees/<int:pk>/edit/', views.fee_edit, name='fee_edit'),
+    path('fee/receipt/<int:payment_id>/', views.fee_receipt_pdf, name='fee_receipt_pdf'),
     
     # Salary Management (Admin)
     path('admin/salaries/', views.salary_management, name='salary_management'),
@@ -44,6 +46,11 @@ urlpatterns = [
     path('admin/classes/', views.class_list, name='class_list'),
     path('admin/classes/add/', views.class_add, name='class_add'),
     path('admin/classes/<int:pk>/delete/', views.class_delete, name='class_delete'),
+    
+    # Subject Management (Admin)
+    path('admin/subjects/', views.subject_list, name='subject_list'),
+    path('admin/subjects/add/', views.subject_add, name='subject_add'),
+    path('admin/subjects/<int:pk>/delete/', views.subject_delete, name='subject_delete'),
     
     # Teacher Attendance Management (Admin)
     path('admin/teacher-attendance/', views.teacher_attendance_list, name='teacher_attendance_list'),
@@ -80,4 +87,13 @@ urlpatterns = [
     path('admin/gallery/', views.gallery_list, name='gallery_list'),
     path('admin/gallery/add/', views.gallery_add, name='gallery_add'),
     path('admin/gallery/<int:pk>/delete/', views.gallery_delete, name='gallery_delete'),
+    
+    # Complaint Management
+    path('student/complaints/', views.student_complaints, name='student_complaints'),
+    path('admin/complaints/', views.admin_complaint_list, name='admin_complaint_list'),
+    path('admin/complaints/<int:pk>/resolve/', views.admin_complaint_resolve, name='admin_complaint_resolve'),
+    
+    # Inquiry Management
+    path('admin/inquiries/', views.admin_inquiry_list, name='admin_inquiry_list'),
+    path('admin/inquiries/<int:pk>/delete/', views.admin_inquiry_delete, name='admin_inquiry_delete'),
 ]

@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(5w%d1g^st1z2^#ov6dzmmu%qdq63o-#x#)z0ly&g^_5afp@-u'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['midpointschoolmanage.pythonanywhere.com', 'localhost', '127.0.0.1', '.vercel.app']
 
@@ -69,7 +69,8 @@ WSGI_APPLICATION = 'school_management.wsgi.application'
 # Database
 IS_VERCEL = "VERCEL" in os.environ
 
-# Check for database environment variables
+# For local development, use PostgreSQL with user credentials
+# For Vercel or other environments, use environment variables if available
 db_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 
 if db_url and dj_database_url:
@@ -79,13 +80,14 @@ if db_url and dj_database_url:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'neondb',
+            'USER': 'neondb_owner',
+            'PASSWORD': 'npg_Gjoda1fZA4bp',
+            'HOST': 'ep-nameless-paper-abmn3lph.eu-west-2.aws.neon.tech',
+            'PORT': '5432',
         }
     }
-
-
-
 
 
 # Password validation
@@ -118,3 +120,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 24 hours
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+
+# SQL Logging (visible in console when DEBUG = True)
+if DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'level': 'ERROR',
+                'class': 'logging.StreamHandler',
+            },
+        },
+        'loggers': {
+            'django.db.backends': {
+                'handlers': ['console'],
+                'level': 'ERROR',
+            },
+        },
+    }

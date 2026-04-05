@@ -401,3 +401,49 @@ class Result(models.Model):
     
     def __str__(self):
         return f"{self.student.name} - {self.exam_name} - {self.subject}"
+
+
+class Complaint(models.Model):
+    """Student complaint model for reporting issues to administration"""
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Resolved', 'Resolved'),
+        ('Closed', 'Closed'),
+    ]
+    
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='complaints')
+    subject = models.CharField(max_length=200)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    admin_remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Complaint"
+        verbose_name_plural = "Complaints"
+    
+    def __str__(self):
+        return f"{self.student.name} - {self.subject} ({self.status})"
+
+
+class Inquiry(models.Model):
+    """Public inquiries from visitors on the home page"""
+    name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True, null=True)
+    mobile = models.CharField(max_length=15)
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Public Inquiry"
+        verbose_name_plural = "Public Inquiries"
+    
+    def __str__(self):
+        return f"{self.name} - {self.subject}"

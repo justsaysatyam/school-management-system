@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ school_info.school_name }} - Welcome{% endblock %}
 
@@ -14,6 +15,46 @@
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         overflow-x: hidden;
         background: #0a0e27;
+    }
+
+    /* Marquee Styles */
+    .admission-marquee {
+        background: #feb47b;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+        color: white;
+        padding: 10px 0;
+        font-weight: 700;
+        font-size: 1.1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .marquee-content {
+        display: inline-block;
+        padding-left: 100%;
+        animation: marquee 25s linear infinite;
+        cursor: pointer;
+        text-decoration: none;
+        color: white;
+    }
+
+    .marquee-content:hover {
+        animation-play-state: paused;
+        color: #0a0e27;
+    }
+
+    @keyframes marquee {
+        0% {
+            transform: translate(0, 0);
+        }
+
+        100% {
+            transform: translate(-100%, 0);
+        }
     }
 
     /* Hero Section */
@@ -578,6 +619,83 @@
         }
     }
 
+    /* Inquiry Section */
+    .inquiry-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 5rem 2rem;
+        color: white;
+    }
+
+    .inquiry-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        padding: 3rem;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .inquiry-form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .inquiry-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        opacity: 0.9;
+    }
+
+    .inquiry-input {
+        width: 100%;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        color: #333;
+        transition: all 0.3s ease;
+    }
+
+    .inquiry-input:focus {
+        outline: none;
+        background: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .submit-inquiry-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: #feb47b;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .submit-inquiry-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(255, 126, 95, 0.4);
+    }
+
+    .results-card {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
     .no-results {
         text-align: center;
         padding: 3rem;
@@ -596,10 +714,20 @@
 
 {% block body %}
 
+<!-- Admission Marquee -->
+<div class="admission-marquee">
+    <a href="#home-inquiry-section" class="marquee-content">
+        🚀 ADMISSION OPEN NOW FOR NEW SESSION 2026-2027 • REGISTER YOUR INTEREST TODAY • CLICK HERE TO SEND AN INQUIRY 🚀
+    </a>
+</div>
+
 <!-- Hero Section -->
 <section class="hero">
     <div class="hero-content">
-        <div class="school-logo">🏫</div>
+        <div class="school-logo">
+            <img src="{% static 'images/logo.png' %}" alt="Mid Point School Logo"
+                style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+        </div>
         <h1>{{ school_info.school_name }}</h1>
         <p class="hero-subtitle">{{ school_info.motto }}</p>
         <p class="hero-info">📍 {{ school_info.address }}</p>
@@ -642,7 +770,11 @@
     <h2 class="section-title">About Our School</h2>
     <div class="portfolio-grid">
         <div class="portfolio-card">
-            <h3>🏫 School Information</h3>
+            <h3>
+                <img src="{% static 'images/logo.png' %}" alt="Logo"
+                    style="height: 24px; vertical-align: middle; margin-right: 8px;">
+                School Information
+            </h3>
             <p><strong>Name:</strong> {{ school_info.school_name }}</p>
             <p><strong>Address:</strong> {{ school_info.address }}</p>
             <p><strong>Contact:</strong> {{ school_info.contact_number }}</p>
@@ -718,6 +850,63 @@
     </div>
 </section>
 
+</a>
+</div>
+</section>
+
+<!-- Inquiry Section -->
+<section class="inquiry-section" id="home-inquiry-section">
+    <h2 class="section-title" style="color: white;">Have a Question?</h2>
+    <p style="text-align: center; margin-bottom: 3rem; opacity: 0.9; font-size: 1.2rem;">Send us an inquiry and our team
+        will get back to you shortly.</p>
+
+    {% if messages %}
+    <div style="max-width: 800px; margin: 0 auto 2rem auto;">
+        {% for message in messages %}
+        <div
+            style="padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; text-align: center; margin-bottom: 1rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="inquiry-container animate-slideUp">
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Full Name</label>
+                    <input type="text" name="name" class="inquiry-input" placeholder="Your Name" required>
+                </div>
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Email Address</label>
+                    <input type="email" name="email" class="inquiry-input" placeholder="Email (Optional)">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Mobile Number</label>
+                    <input type="text" name="mobile" class="inquiry-input" placeholder="Mobile Number" required>
+                </div>
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Subject</label>
+                    <input type="text" name="subject" class="inquiry-input" placeholder="Inquiry Subject" required>
+                </div>
+            </div>
+
+            <div class="inquiry-form-group">
+                <label class="inquiry-label">Your Message</label>
+                <textarea name="message" class="inquiry-input" rows="4" placeholder="Type your message here..."
+                    required></textarea>
+            </div>
+
+            <button type="submit" name="inquiry_submit" class="submit-inquiry-btn">📤 Send Inquiry Now</button>
+        </form>
+    </div>
+</section>
+Joseph
 
 <!-- Footer -->
 <footer class="footer">
@@ -747,7 +936,7 @@
             📞 {{ school_info.contact_number }} | 📧 {{ school_info.email }}
         </p>
         <p style="margin-top: 1.5rem; opacity: 0.8;">
-            Developed with ❤️ for quality education
+            Developed by ❤️ Bs-singh-tech-enterprises.pvt.ltd
         </p>
     </div>
 </footer>

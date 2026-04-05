@@ -1,5 +1,5 @@
 from django import forms
-from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Notice, Event, SchoolClass, Subject
+from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Notice, Event, SchoolClass, Subject, Complaint, Inquiry
 
 
 class LoginForm(forms.Form):
@@ -150,4 +150,67 @@ class SubjectForm(forms.ModelForm):
         widgets = {
             'subject_name': forms.TextInput(attrs={'class': 'form-input'}),
             'subject_code': forms.TextInput(attrs={'class': 'form-input'}),
+        }
+
+
+class ComplaintForm(forms.ModelForm):
+    """Form for students to submit complaints"""
+    class Meta:
+        model = Complaint
+        fields = ['subject', 'description']
+        widgets = {
+            'subject': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter complaint subject'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-input',
+                'rows': 5,
+                'placeholder': 'Provide details about your complaint'
+            }),
+        }
+
+
+class ComplaintResolveForm(forms.ModelForm):
+    """Form for admin to resolve complaints"""
+    class Meta:
+        model = Complaint
+        fields = ['status', 'admin_remarks']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-input'}),
+            'admin_remarks': forms.Textarea(attrs={
+                'class': 'form-input',
+                'rows': 4,
+                'placeholder': 'Add resolution remarks here...'
+            }),
+        }
+
+
+class InquiryForm(forms.ModelForm):
+    """Form for public inquiries on the home page"""
+    class Meta:
+        model = Inquiry
+        fields = ['name', 'email', 'mobile', 'subject', 'message']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Your Full Name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Your Email Address (Optional)'
+            }),
+            'mobile': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Your Mobile Number'
+            }),
+            'subject': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Subject of Inquiry'
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-input',
+                'rows': 4,
+                'placeholder': 'How can we help you?'
+            }),
         }

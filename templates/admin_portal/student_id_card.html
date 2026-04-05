@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -272,7 +273,10 @@
         <div class="id-card">
             <div class="id-card-front">
                 <div class="school-header">
-                    <h1>🏫 Mid Point School</h1>
+                    <h1>
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 10px; border-radius: 50%; background: white; object-fit: cover;">
+                        Mid Point School
+                    </h1>
                     <small>Excellence in Education</small>
                 </div>
 
@@ -315,7 +319,10 @@
         <div class="id-card">
             <div class="id-card-front">
                 <div class="school-header">
-                    <h1>🏫 Mid Point School</h1>
+                    <h1>
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 10px; border-radius: 50%; background: white; object-fit: cover;">
+                        Mid Point School
+                    </h1>
                     <small>Student Identity Card</small>
                 </div>
 
