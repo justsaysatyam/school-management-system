@@ -1,0 +1,379 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee Receipt - {{ payment.student.name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f0f0;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        .receipt-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Branding element */
+        .receipt-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .school-info h1 {
+            font-size: 1.8rem;
+            color: #764ba2;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .school-info img {
+            height: 50px;
+            width: 50px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            padding: 5px;
+            margin-right: 15px;
+            border: 1px solid #eee;
+        }
+
+        .school-info p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .receipt-title {
+            text-align: right;
+        }
+
+        .receipt-title h2 {
+            font-size: 2rem;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .receipt-no {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .detail-group h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #999;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .label {
+            font-weight: 600;
+            width: 120px;
+            color: #555;
+        }
+
+        .value {
+            color: #222;
+        }
+
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        .payment-table th {
+            background: #f8f9fa;
+            text-align: left;
+            padding: 15px;
+            font-size: 0.9rem;
+            color: #555;
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+        }
+
+        .payment-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .amount-col {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .summary-box {
+            width: 300px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #764ba2;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #764ba2;
+        }
+
+        .footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .signature-area {
+            text-align: center;
+            width: 200px;
+        }
+
+        .sig-line {
+            border-top: 1px solid #333;
+            margin-bottom: 10px;
+        }
+
+        .sig-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #999;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .controls {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-print {
+            background: #764ba2;
+            color: white;
+        }
+
+        .btn-back {
+            background: #eee;
+            color: #555;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .receipt-container {
+                box-shadow: none;
+                border: 1px solid #eee;
+                max-width: 100%;
+            }
+
+            .controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <a href="javascript:history.back()" class="btn btn-back">← Back</a>
+        <button onclick="window.print()" class="btn btn-print">🖨️ Print Receipt</button>
+    </div>
+
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <div class="school-info">
+                <h1>
+                    <img src="{% static 'images/logo.png' %}" alt="Logo">
+                    Mid Point School
+                </h1>
+                <p>Barahiya, Near Hanuman Temple, Lakhisarai<br>
+                    Contact: +91 77620 44304<br>
+                    Email: bssingtechenterprieses@gmail.com</p>
+            </div>
+            <div class="receipt-title">
+                <h2>Receipt</h2>
+                <p class="receipt-no">#REC-{{ payment.id|stringformat:"05d" }}</p>
+                <p style="font-size: 0.9rem; color: #666;">Date: {{ payment.payment_date }}</p>
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="detail-group">
+                <h3>Student Details</h3>
+                <div class="detail-item">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ payment.student.name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Class:</span>
+                    <span class="value">{{ payment.student.student_class }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Father's Name:</span>
+                    <span class="value">{{ payment.student.father_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">ID Number:</span>
+                    <span class="value">MPS-{{ payment.student.id|stringformat:"04d" }}</span>
+                </div>
+            </div>
+            <div class="detail-group">
+                <h3>Payment Details</h3>
+                <div class="detail-item">
+                    <span class="label">Month/Year:</span>
+                    <span class="value">{{ payment.month }} {{ payment.year }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Mode:</span>
+                    <span class="value">{{ payment.payment_mode }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Status:</span>
+                    <span class="value">
+                        <span style="color: {% if payment.status == 'Paid' %}#10b981{% elif payment.status == 'Partial' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: 700;">
+                            {{ payment.status|upper }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <table class="payment-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="amount-col">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>School Fees for {{ payment.month }} {{ payment.year }}</td>
+                    <td class="amount-col">₹{{ payment.paid_amount|default:"0.00" }}</td>
+                </tr>
+                {% if payment.remarks %}
+                <tr>
+                    <td colspan="2" style="font-size: 0.85rem; color: #666; padding-top: 5px;">
+                        <strong>Remarks:</strong> {{ payment.remarks }}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="summary-section">
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>Paid Amount:</span>
+                    <span>₹{{ payment.paid_amount|default:"0.00" }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Due Amount:</span>
+                    <span>₹{{ payment.due_amount|default:"0.00" }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total Paid:</span>
+                    <span>₹{{ payment.paid_amount|default:"0.00" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="note">
+                <p><strong>Note:</strong> This is a computer generated receipt and does not require a physical signature. However, for any discrepancies, please contact the school office within 7 days of payment.</p>
+            </div>
+            <div class="signature-area">
+                <div class="sig-line"></div>
+                <p class="sig-label">Accountant/Cashier</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

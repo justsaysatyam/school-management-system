@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Resolve Complaint - Admin Portal{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
+            <div>
+                <h2>Mid Point School</h2>
+                <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item"><a href="{% url 'admin_dashboard' %}" class="nav-link"><span class="icon">📊</span> Dashboard</a></li>
+                <span class="nav-section-title">Management</span>
+                <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link"><span class="icon">🎓</span> Students</a></li>
+                <li class="nav-item"><a href="{% url 'teacher_list' %}" class="nav-link"><span class="icon">👨‍🏫</span> Teachers</a></li>
+                <li class="nav-item"><a href="{% url 'class_list' %}" class="nav-link"><span class="icon">🏛️</span> Classes</a></li>
+                <span class="nav-section-title">Support</span>
+                <li class="nav-item"><a href="{% url 'admin_complaint_list' %}" class="nav-link active"><span class="icon">📥</span> Complaints</a></li>
+                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">🔍 Complaint Resolution</h1>
+            <div class="user-profile">
+                <div class="user-avatar">{{ request.session.user_name|slice:":1"|upper }}</div>
+                <div><strong>{{ request.session.user_name }}</strong><div style="font-size: 0.75rem; color: var(--gray-500);">Administrator</div></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Complaint Details -->
+            <div class="card animate-slideUp">
+                <div class="card-header">
+                    <h3 class="card-title">Complaint Information</h3>
+                    <span class="badge badge-{% if complaint.status == 'Resolved' %}success{% elif complaint.status == 'Pending' %}warning{% elif complaint.status == 'In Progress' %}info{% else %}dark{% endif %}">
+                        {{ complaint.status }}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div style="background: var(--gray-50); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h4 style="margin: 0 0 1rem 0; font-size: 1.25rem;">{{ complaint.subject }}</h4>
+                        <p style="white-space: pre-line; line-height: 1.6; color: var(--gray-700);">{{ complaint.description }}</p>
+                    </div>
+
+                    <div class="grid-2" style="font-size: 0.875rem;">
+                        <div>
+                            <p class="text-muted mb-1">Student</p>
+                            <p><strong>{{ complaint.student.name }}</strong></p>
+                            <p class="text-muted">{{ complaint.student.student_class }}</p>
+                        </div>
+                        <div>
+                            <p class="text-muted mb-1">Submitted On</p>
+                            <p><strong>{{ complaint.created_at|date:"F d, Y" }}</strong></p>
+                            <p class="text-muted">{{ complaint.created_at|time:"h:i A" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resolution Form -->
+            <div class="card animate-slideUp" style="animation-delay: 0.1s;">
+                <div class="card-header">
+                    <h3 class="card-title">Update Resolution</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group mb-4">
+                            <label class="form-label">Resolution Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="form-group mb-4">
+                            <label class="form-label">Admin Remarks / Response</label>
+                            {{ form.admin_remarks }}
+                            <small class="text-muted mt-2 block">This response will be visible to the student.</small>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-1">✅ Update Complaint</button>
+                            <a href="{% url 'admin_complaint_list' %}" class="btn btn-outline">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

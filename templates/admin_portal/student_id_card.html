@@ -274,7 +274,11 @@
             <div class="id-card-front">
                 <div class="school-header">
                     <h1>
-                        <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 10px; border-radius: 50%; background: white; object-fit: cover;">
+                        {% if school_info.logo %}
+                            <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 10px; border-radius: 50%; background: white; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 10px; border-radius: 50%; background: white; object-fit: cover;">
+                        {% endif %}
                         Mid Point School
                     </h1>
                     <small>Excellence in Education</small>
@@ -283,7 +287,7 @@
                 <div class="card-content">
                     <div class="photo-frame">
                         {% if student.photo %}
-                        <img src="{{ student.photo.url }}" alt="{{ student.name }}">
+                        <img src="{% url 'serve_binary' 'Student' student.id 'photo' %}" alt="{{ student.name }}">
                         {% else %}
                         <div class="photo-placeholder">👤</div>
                         {% endif %}

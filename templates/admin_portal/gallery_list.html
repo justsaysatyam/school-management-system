@@ -192,7 +192,7 @@
     <div class="gallery-grid">
         {% for image in images %}
         <div class="gallery-item">
-            <img src="{{ image.image.url }}" alt="{{ image.title }}">
+            <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
             <div class="gallery-info">
                 <span class="category-badge">{{ image.category }}</span>
                 <h3 style="margin: 0.5rem 0;">{{ image.title }}</h3>

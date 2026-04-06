@@ -6,6 +6,14 @@ Mid Point School - School Management System
 from pathlib import Path
 import os
 import sys
+
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Import dj_database_url conditionally is better for local dev if not installed
 try:
     import dj_database_url
@@ -17,12 +25,12 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(5w%d1g^st1z2^#ov6dzmmu%qdq63o-#x#)z0ly&g^_5afp@-u'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-(5w%d1g^st1z2^#ov6dzmmu%qdq63o-#x#)z0ly&g^_5afp@-u')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['midpointschoolmanage.pythonanywhere.com', 'localhost', '127.0.0.1', '.vercel.app']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.railway.app,.vercel.app').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -67,25 +75,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'school_management.wsgi.application'
 
 # Database
-IS_VERCEL = "VERCEL" in os.environ
-
-# For local development, use PostgreSQL with user credentials
-# For Vercel or other environments, use environment variables if available
-db_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+# Priority: 1. DATABASE_URL (Railway/Vercel/Neon), 2. Local config (for dev)
+db_url = os.environ.get('DATABASE_URL')
 
 if db_url and dj_database_url:
     DATABASES = {
-        'default': dj_database_url.parse(db_url, conn_max_age=600, conn_health_checks=True)
+        'default': dj_database_url.config(default=db_url, conn_max_age=600, conn_health_checks=True)
     }
 else:
+    # Use SQLite if no database URL is provided (convenient for local dev)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'neondb',
-            'USER': 'neondb_owner',
-            'PASSWORD': 'npg_Gjoda1fZA4bp',
-            'HOST': 'ep-nameless-paper-abmn3lph.eu-west-2.aws.neon.tech',
-            'PORT': '5432',
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -108,6 +110,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise settings for static files
+WHITENOISE_USE_FINDERS = True
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (Uploads)
 MEDIA_URL = '/media/'

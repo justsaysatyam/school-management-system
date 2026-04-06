@@ -51,6 +51,7 @@
                         <th>Category</th>
                         <th>Priority</th>
                         <th>Audience</th>
+                        <th>File</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
@@ -65,6 +66,13 @@
                                 class="badge badge-{% if notice.priority == 'High' %}danger{% elif notice.priority == 'Medium' %}warning{% else %}success{% endif %}">{{
                                 notice.priority }}</span></td>
                         <td>{{ notice.audience }}</td>
+                        <td>
+                            {% if notice.file %}
+                                <a href="{% url 'serve_binary' 'Notice' notice.id 'file' %}" class="btn btn-sm btn-outline" target="_blank">📄 View</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>{{ notice.notice_date }}</td>
                         <td><a href="{% url 'notice_delete' notice.pk %}" class="btn btn-sm btn-danger"
                                 onclick="return confirm('Delete this notice?')">Delete</a></td>

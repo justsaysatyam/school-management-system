@@ -725,8 +725,13 @@
 <section class="hero">
     <div class="hero-content">
         <div class="school-logo">
-            <img src="{% static 'images/logo.png' %}" alt="Mid Point School Logo"
-                style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+            {% if school_info.logo %}
+                <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="{{ school_info.school_name }} Logo"
+                    style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+            {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="{{ school_info.school_name }} Logo"
+                    style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+            {% endif %}
         </div>
         <h1>{{ school_info.school_name }}</h1>
         <p class="hero-subtitle">{{ school_info.motto }}</p>
@@ -771,8 +776,13 @@
     <div class="portfolio-grid">
         <div class="portfolio-card">
             <h3>
-                <img src="{% static 'images/logo.png' %}" alt="Logo"
-                    style="height: 24px; vertical-align: middle; margin-right: 8px;">
+                {% if school_info.logo %}
+                    <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo"
+                        style="height: 24px; vertical-align: middle; margin-right: 8px;">
+                {% else %}
+                    <img src="{% static 'images/logo.png' %}" alt="Logo"
+                        style="height: 24px; vertical-align: middle; margin-right: 8px;">
+                {% endif %}
                 School Information
             </h3>
             <p><strong>Name:</strong> {{ school_info.school_name }}</p>
@@ -817,7 +827,7 @@
     <div class="gallery-grid">
         {% for image in gallery_images %}
         <div class="gallery-item">
-            <img src="{{ image.image.url }}" alt="{{ image.title }}">
+            <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
             <div class="gallery-overlay">
                 <h4>{{ image.title }}</h4>
                 <p>{{ image.category }}</p>

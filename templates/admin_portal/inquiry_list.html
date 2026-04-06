@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Public Inquiries - Admin Portal{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
+            <div>
+                <h2>Mid Point School</h2>
+                <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item"><a href="{% url 'admin_dashboard' %}" class="nav-link"><span class="icon">📊</span> Dashboard</a></li>
+                <span class="nav-section-title">Management</span>
+                <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link"><span class="icon">🎓</span> Students</a></li>
+                <li class="nav-item"><a href="{% url 'teacher_list' %}" class="nav-link"><span class="icon">👨‍🏫</span> Teachers</a></li>
+                <span class="nav-section-title">Support</span>
+                <li class="nav-item"><a href="{% url 'admin_complaint_list' %}" class="nav-link"><span class="icon">📥</span> Complaints</a></li>
+                <li class="nav-item"><a href="{% url 'admin_inquiry_list' %}" class="nav-link active"><span class="icon">❓</span> Inquiries</a></li>
+                <span class="nav-section-title">Communication</span>
+                <li class="nav-item"><a href="{% url 'notice_list' %}" class="nav-link"><span class="icon">📢</span> Notices</a></li>
+                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">❓ Public Inquiries</h1>
+            <div class="user-profile">
+                <div class="user-avatar">{{ request.session.user_name|slice:":1"|upper }}</div>
+                <div><strong>{{ request.session.user_name }}</strong><div style="font-size: 0.75rem; color: var(--gray-500);">Administrator</div></div>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} animate-fadeIn">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <div class="card-header">
+                <h3 class="card-title">Recent Inquiries from Website</h3>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Info</th>
+                            <th>Subject</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inquiry in inquiries %}
+                        <tr style="{% if not inquiry.is_read %}background: rgba(102, 126, 234, 0.05);{% endif %}">
+                            <td>
+                                <strong>{{ inquiry.name }}</strong>
+                                {% if not inquiry.is_read %}
+                                <span class="badge badge-info" style="font-size: 0.6rem; vertical-align: middle;">NEW</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>📧 {{ inquiry.email|default:"-" }}</div>
+                                <div>📱 {{ inquiry.mobile }}</div>
+                            </td>
+                            <td>{{ inquiry.subject }}</td>
+                            <td title="{{ inquiry.message }}">
+                                <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    {{ inquiry.message }}
+                                </div>
+                            </td>
+                            <td>{{ inquiry.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'admin_inquiry_delete' inquiry.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this inquiry?')">🗑️</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-5 text-muted">No public inquiries found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

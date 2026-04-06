@@ -96,4 +96,7 @@ urlpatterns = [
     # Inquiry Management
     path('admin/inquiries/', views.admin_inquiry_list, name='admin_inquiry_list'),
     path('admin/inquiries/<int:pk>/delete/', views.admin_inquiry_delete, name='admin_inquiry_delete'),
+    
+    # Binary Serving
+    path('serve-binary/<str:model_name>/<int:record_id>/<str:field_name>/', views.serve_binary, name='serve_binary'),
 ]

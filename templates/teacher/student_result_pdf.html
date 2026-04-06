@@ -466,7 +466,11 @@
         <!-- School Header -->
         <div class="school-header">
             <h1>
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 45px; width: 45px; vertical-align: middle; margin-right: 15px; border-radius: 50%; background: white; object-fit: cover;">
+                {% if school_info.logo %}
+                    <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" style="height: 45px; width: 45px; vertical-align: middle; margin-right: 15px; border-radius: 50%; background: white; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 45px; width: 45px; vertical-align: middle; margin-right: 15px; border-radius: 50%; background: white; object-fit: cover;">
+                {% endif %}
                 Mid Point School
             </h1>
             <div class="address">Barahiya, Near Hanuman Temple</div>
@@ -477,7 +481,7 @@
         <div class="student-info">
             <div class="student-photo">
                 {% if student.photo %}
-                <img src="{{ student.photo.url }}" alt="{{ student.name }}">
+                <img src="{% url 'serve_binary' 'Student' student.id 'photo' %}" alt="{{ student.name }}">
                 {% else %}
                 <div class="photo-placeholder">👤</div>
                 {% endif %}

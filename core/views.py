@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.http import HttpResponse, Http404
+from django.apps import apps
 from django.db.models import Sum, Count
 from django.utils import timezone
 from decimal import Decimal
@@ -1399,8 +1401,10 @@ def gallery_add(request):
                 title=title,
                 category=category,
                 description=description,
-                image=image,
-                display_order=int(display_order)
+                image=image.read(),
+                image_mimetype=image.content_type,
+                image_filename=image.name,
+                display_order=int(display_order) if display_order else 0
             )
             messages.success(request, 'Gallery image added successfully')
         else:
@@ -1421,3 +1425,30 @@ def gallery_delete(request, pk):
     
     messages.success(request, 'Gallery image deleted')
     return redirect('gallery_list')
+
+
+# ===================== BINARY FILE SERVING =====================
+
+def serve_binary(request, model_name, record_id, field_name):
+    """View to serve binary data from any model specifically for this project"""
+    try:
+        model = apps.get_model('core', model_name)
+        record = get_object_or_404(model, pk=record_id)
+        
+        # Get binary data
+        binary_data = getattr(record, field_name, None)
+        if not binary_data:
+            raise Http404("File not found")
+        
+        # Get metadata
+        mimetype = getattr(record, f"{field_name}_mimetype", "application/octet-stream")
+        filename = getattr(record, f"{field_name}_filename", f"{model_name}_{record_id}")
+        
+        response = HttpResponse(binary_data, content_type=mimetype)
+        # Only set attachment for non-images or if explicitly requested
+        if 'image' not in mimetype:
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+    except Exception as e:
+        raise Http404(f"Error serving file: {str(e)}")

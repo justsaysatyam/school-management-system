@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Student Complaints - Admin Portal{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
+            <div>
+                <h2>Mid Point School</h2>
+                <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item"><a href="{% url 'admin_dashboard' %}" class="nav-link"><span class="icon">📊</span> Dashboard</a></li>
+                <span class="nav-section-title">Management</span>
+                <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link"><span class="icon">🎓</span> Students</a></li>
+                <li class="nav-item"><a href="{% url 'teacher_list' %}" class="nav-link"><span class="icon">👨‍🏫</span> Teachers</a></li>
+                <li class="nav-item"><a href="{% url 'class_list' %}" class="nav-link"><span class="icon">🏛️</span> Classes</a></li>
+                <span class="nav-section-title">Finance</span>
+                <li class="nav-item"><a href="{% url 'fee_collection' %}" class="nav-link"><span class="icon">💰</span> Fee Collection</a></li>
+                <li class="nav-item"><a href="{% url 'salary_management' %}" class="nav-link"><span class="icon">💵</span> Salary Payments</a></li>
+                <span class="nav-section-title">Support</span>
+                <li class="nav-item"><a href="{% url 'admin_complaint_list' %}" class="nav-link active"><span class="icon">📥</span> Complaints</a></li>
+                <span class="nav-section-title">Communication</span>
+                <li class="nav-item"><a href="{% url 'notice_list' %}" class="nav-link"><span class="icon">📢</span> Notices</a></li>
+                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">📥 Student Complaints</h1>
+            <div class="user-profile">
+                <div class="user-avatar">{{ request.session.user_name|slice:":1"|upper }}</div>
+                <div><strong>{{ request.session.user_name }}</strong><div style="font-size: 0.75rem; color: var(--gray-500);">Administrator</div></div>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} animate-fadeIn">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <div class="card-header">
+                <h3 class="card-title">All Complaints</h3>
+                <div class="header-actions">
+                    <form method="GET" class="flex gap-2">
+                        <select name="status" class="form-input" style="padding: 0.4rem 2rem; width: auto; font-size: 0.875rem;">
+                            <option value="">All Status</option>
+                            <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Resolved" {% if selected_status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                            <option value="Closed" {% if selected_status == 'Closed' %}selected{% endif %}>Closed</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Class</th>
+                            <th>Status</th>
+                            <th>Submitted On</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                        <tr>
+                            <td>
+                                <strong>{{ complaint.student.name }}</strong>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);">{{ complaint.student.email }}</div>
+                            </td>
+                            <td>{{ complaint.subject }}</td>
+                            <td>{{ complaint.student.student_class }}</td>
+                            <td>
+                                <span class="badge badge-{% if complaint.status == 'Resolved' %}success{% elif complaint.status == 'Pending' %}warning{% elif complaint.status == 'In Progress' %}info{% else %}dark{% endif %}">
+                                    {{ complaint.status }}
+                                </span>
+                            </td>
+                            <td>{{ complaint.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'admin_complaint_resolve' complaint.pk %}" class="btn btn-sm btn-primary">
+                                    {% if complaint.status == 'Resolved' %}View{% else %}Resolve{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-5 text-muted">No complaints found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

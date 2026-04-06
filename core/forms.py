@@ -18,9 +18,11 @@ class AdminForm(forms.ModelForm):
     """Form for creating/editing admin"""
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input'}), required=False)
     
+    photo = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    
     class Meta:
         model = Admin
-        fields = ['name', 'email', 'phone', 'address', 'role', 'photo']
+        fields = ['name', 'email', 'phone', 'address', 'role']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input'}),
             'email': forms.EmailInput(attrs={'class': 'form-input'}),
@@ -29,16 +31,29 @@ class AdminForm(forms.ModelForm):
             'role': forms.TextInput(attrs={'class': 'form-input'}),
         }
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'read'):
+            instance.photo = photo.read()
+            instance.photo_mimetype = photo.content_type
+            instance.photo_filename = photo.name
+        if commit:
+            instance.save()
+        return instance
+
 
 class TeacherForm(forms.ModelForm):
     """Form for creating/editing teacher"""
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input'}), required=False)
     
+    photo = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    
     class Meta:
         model = Teacher
         fields = ['name', 'father_name', 'email', 'mobile', 'address', 'aadhar_no', 
                   'qualification', 'role', 'joining_date', 'subjects', 'class_section', 
-                  'monthly_salary', 'photo', 'is_active']
+                  'monthly_salary', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input'}),
             'father_name': forms.TextInput(attrs={'class': 'form-input'}),
@@ -54,15 +69,28 @@ class TeacherForm(forms.ModelForm):
             'monthly_salary': forms.NumberInput(attrs={'class': 'form-input'}),
         }
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'read'):
+            instance.photo = photo.read()
+            instance.photo_mimetype = photo.content_type
+            instance.photo_filename = photo.name
+        if commit:
+            instance.save()
+        return instance
+
 
 class StudentForm(forms.ModelForm):
     """Form for creating/editing student"""
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input'}), required=False)
     
+    photo = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    
     class Meta:
         model = Student
         fields = ['name', 'father_name', 'student_class', 'address', 'email', 
-                  'mobile', 'admission_date', 'monthly_fee', 'photo', 'is_active']
+                  'mobile', 'admission_date', 'monthly_fee', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input'}),
             'father_name': forms.TextInput(attrs={'class': 'form-input'}),
@@ -73,6 +101,17 @@ class StudentForm(forms.ModelForm):
             'admission_date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
             'monthly_fee': forms.NumberInput(attrs={'class': 'form-input'}),
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'read'):
+            instance.photo = photo.read()
+            instance.photo_mimetype = photo.content_type
+            instance.photo_filename = photo.name
+        if commit:
+            instance.save()
+        return instance
 
 
 class TeacherPaymentForm(forms.ModelForm):
@@ -115,10 +154,12 @@ class StudentPaymentForm(forms.ModelForm):
 
 class NoticeForm(forms.ModelForm):
     """Form for creating notices"""
+    file = forms.FileField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    
     class Meta:
         model = Notice
         fields = ['title', 'description', 'category', 'issued_by', 'priority', 
-                  'valid_until', 'audience', 'file']
+                  'valid_until', 'audience']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 4}),
@@ -128,6 +169,17 @@ class NoticeForm(forms.ModelForm):
             'valid_until': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
             'audience': forms.Select(attrs={'class': 'form-input'}),
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        file = self.cleaned_data.get('file')
+        if file and hasattr(file, 'read'):
+            instance.file = file.read()
+            instance.file_mimetype = file.content_type
+            instance.file_filename = file.name
+        if commit:
+            instance.save()
+        return instance
 
 
 class ClassForm(forms.ModelForm):

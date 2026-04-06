@@ -34,7 +34,9 @@ class Admin(models.Model):
     address = models.TextField(blank=True)
     password = models.CharField(max_length=128)
     role = models.CharField(max_length=50, default='Administrator')
-    photo = models.ImageField(upload_to='admin_photos/', blank=True, null=True)
+    photo = models.BinaryField(blank=True, null=True)
+    photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    photo_filename = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def set_password(self, raw_password):
@@ -62,7 +64,9 @@ class Teacher(models.Model):
     class_section = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL, null=True, blank=True)
     password = models.CharField(max_length=128)
     monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    photo = models.ImageField(upload_to='teacher_photos/', blank=True, null=True)
+    photo = models.BinaryField(blank=True, null=True)
+    photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    photo_filename = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -87,7 +91,9 @@ class Student(models.Model):
     mobile = models.CharField(max_length=15)
     admission_date = models.DateField()
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    photo = models.ImageField(upload_to='student_photos/', blank=True, null=True)
+    photo = models.BinaryField(blank=True, null=True)
+    photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    photo_filename = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -237,7 +243,9 @@ class Notice(models.Model):
     notice_date = models.DateField(auto_now_add=True)
     valid_until = models.DateField(null=True, blank=True)
     audience = models.CharField(max_length=20, choices=AUDIENCE_CHOICES, default='All')
-    file = models.FileField(upload_to='notices/', blank=True, null=True)
+    file = models.BinaryField(blank=True, null=True)
+    file_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    file_filename = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
     class Meta:
@@ -253,7 +261,9 @@ class Event(models.Model):
     description = models.TextField()
     event_date = models.DateField()
     event_time = models.TimeField(null=True, blank=True)
-    image = models.ImageField(upload_to='events/', blank=True, null=True)
+    image = models.BinaryField(blank=True, null=True)
+    image_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    image_filename = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -292,7 +302,9 @@ class SchoolInfo(models.Model):
     total_teachers = models.IntegerField(default=25)
     motto = models.CharField(max_length=200, default='Excellence in Education')
     description = models.TextField(blank=True)
-    logo = models.ImageField(upload_to='school/', blank=True, null=True)
+    logo = models.BinaryField(blank=True, null=True)
+    logo_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    logo_filename = models.CharField(max_length=255, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
@@ -315,7 +327,9 @@ class GalleryImage(models.Model):
     ]
     
     title = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='gallery/')
+    image = models.BinaryField(blank=True, null=True)
+    image_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    image_filename = models.CharField(max_length=255, blank=True, null=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')
     description = models.TextField(blank=True)
     upload_date = models.DateTimeField(auto_now_add=True)
