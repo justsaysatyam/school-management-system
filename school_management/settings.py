@@ -79,9 +79,24 @@ WSGI_APPLICATION = 'school_management.wsgi.application'
 db_url = os.environ.get('DATABASE_URL')
 
 if db_url and dj_database_url:
-    DATABASES = {
-        'default': dj_database_url.config(default=db_url, conn_max_age=600, conn_health_checks=True)
-    }
+    # Handling potential special characters and extra quotes in the connection string
+    cleaned_db_url = db_url.strip("'\"").strip()
+    try:
+        DATABASES = {
+            'default': dj_database_url.parse(
+                cleaned_db_url, 
+                conn_max_age=600, 
+                conn_health_checks=True
+            )
+        }
+    except Exception:
+        # Fallback to SQLite if DATABASE_URL is somehow invalid despite being present
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
 else:
     # Use SQLite if no database URL is provided (convenient for local dev)
     DATABASES = {
@@ -146,3 +161,8 @@ if DEBUG:
             },
         },
     }
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://midpointschool.up.railway.app",
+    "https://your-custom-domain.com"
+]
