@@ -273,9 +273,9 @@
                     <img src="{% static 'images/logo.png' %}" alt="Logo">
                     Mid Point School
                 </h1>
-                <p>Barahiya, Near Hanuman Temple, Lakhisarai<br>
+                <p>Barahiya, Near Ganesh mandir, Lakhisarai<br>
                     Contact: +91 77620 44304<br>
-                    Email: bssingtechenterprieses@gmail.com</p>
+                    Email: midpointschool2003@gmail.com</p>
             </div>
             <div class="receipt-title">
                 <h2>Receipt</h2>
@@ -317,7 +317,8 @@
                 <div class="detail-item">
                     <span class="label">Status:</span>
                     <span class="value">
-                        <span style="color: {% if payment.status == 'Paid' %}#10b981{% elif payment.status == 'Partial' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: 700;">
+                        <span
+                            style="color: {% if payment.status == 'Paid' %}#10b981{% elif payment.status == 'Partial' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: 700;">
                             {{ payment.status|upper }}
                         </span>
                     </span>
@@ -366,7 +367,9 @@
 
         <div class="footer">
             <div class="note">
-                <p><strong>Note:</strong> This is a computer generated receipt and does not require a physical signature. However, for any discrepancies, please contact the school office within 7 days of payment.</p>
+                <p><strong>Note:</strong> This is a computer generated receipt and does not require a physical
+                    signature. However, for any discrepancies, please contact the school office within 7 days of
+                    payment.</p>
             </div>
             <div class="signature-area">
                 <div class="sig-line"></div>
