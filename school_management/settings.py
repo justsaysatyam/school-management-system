@@ -165,7 +165,4 @@ if DEBUG:
 CSRF_TRUSTED_ORIGINS = [
     "https://midpointschool.up.railway.app",
     "https://midpointschool.online",
-    "https://www.midpointschool.online",
-    "midpointschool.online",
-    "www.midpointschool.online",
 ]
