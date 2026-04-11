@@ -297,6 +297,7 @@ class SchoolInfo(models.Model):
     contact_number = models.CharField(max_length=15, default='7762044304')
     email = models.EmailField(default='bssingtechenterprieses@gmail.com')
     principal_name = models.CharField(max_length=100, default='Raja Ram Kumar')
+    director_name = models.CharField(max_length=100, default='Manoj Kumar')
     established_year = models.IntegerField(default=2000)
     total_students = models.IntegerField(default=500)
     total_teachers = models.IntegerField(default=25)

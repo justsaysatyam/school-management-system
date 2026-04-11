@@ -59,11 +59,6 @@ def admin_login(request):
             password = form.cleaned_data['password']
             try:
                 admin = Admin.objects.get(email=email)
-                print("==============================================")
-                print(password)
-                print("Hash for " , password," is ", make_password(password))
-                print(admin.password)
-                ("==============================================")
                 if admin.check_password(password):
                     request.session['admin_id'] = admin.id
                     request.session['user_type'] = 'admin'

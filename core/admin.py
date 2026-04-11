@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     SchoolClass, Subject, Admin, Teacher, Student,
     TeacherPayment, StudentPayment, TeacherAttendance, StudentAttendance,
-    Notice, Event, Exam
+    Notice, Event, Exam, SchoolInfo
 )
 
 
@@ -86,3 +86,9 @@ class ExamAdmin(admin.ModelAdmin):
     list_display = ['exam_name', 'school_class', 'subject', 'exam_date', 'exam_time', 'room_no']
     list_filter = ['school_class', 'exam_date']
     search_fields = ['exam_name']
+
+
+@admin.register(SchoolInfo)
+class SchoolInfoAdmin(admin.ModelAdmin):
+    list_display = ['school_name', 'director_name', 'principal_name', 'contact_number', 'email']
+    search_fields = ['school_name', 'director_name', 'principal_name']
