@@ -727,10 +727,10 @@
         <div class="school-logo">
             {% if school_info.logo %}
                 <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="{{ school_info.school_name }} Logo"
-                    style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+                    style="height: 120px; width: 120px; object-fit: cover; border-radius: 50%; border: 3px solid white; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
             {% else %}
                 <img src="{% static 'images/logo.png' %}" alt="{{ school_info.school_name }} Logo"
-                    style="height: 120px; width: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+                    style="height: 120px; width: 120px; object-fit: cover; border-radius: 50%; border: 3px solid white; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
             {% endif %}
         </div>
         <h1>{{ school_info.school_name }}</h1>
@@ -949,7 +949,7 @@ Joseph
         </p>
         <p style="margin-top: 1.5rem; opacity: 0.8;">
             Developed by 🏭 bssinghtechenterprises.pvt.ltd
-                      (Satyam Jha)
+                      (<a href="https://www.instagram.com/satyamjha007/?hl=en" target="_blank" style="color: inherit; text-decoration: none;">Satyam Jha</a>)
         </p>
     </div>
 </footer>
