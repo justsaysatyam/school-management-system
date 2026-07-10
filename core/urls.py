@@ -99,4 +99,7 @@ urlpatterns = [
     
     # Binary Serving
     path('serve-binary/<str:model_name>/<int:record_id>/<str:field_name>/', views.serve_binary, name='serve_binary'),
+    
+    # Health Check
+    path('health-check/', views.health_check, name='health_check'),
 ]

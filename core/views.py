@@ -1447,3 +1447,9 @@ def serve_binary(request, model_name, record_id, field_name):
         return response
     except Exception as e:
         raise Http404(f"Error serving file: {str(e)}")
+
+# ===================== HEALTH CHECK =====================
+
+def health_check(request):
+    """Render and UptimeRobot health check endpoint"""
+    return HttpResponse("OK", status=200)
