@@ -8,7 +8,8 @@ from decimal import Decimal
 from .models import (
     Admin, Teacher, Student, SchoolClass, Subject,
     TeacherPayment, StudentPayment, TeacherAttendance, StudentAttendance,
-    Notice, Event, Exam, SchoolInfo, GalleryImage, Result, Complaint, Inquiry
+    Notice, Event, Exam, ExamTerm, SchoolInfo, GalleryImage, Result, Complaint, Inquiry,
+    AdmitCardRequest, ExamSchedule
 )
 from .forms import (
     LoginForm, TeacherForm, StudentForm, TeacherPaymentForm, 
@@ -686,6 +687,66 @@ def subject_delete(request, pk):
     return redirect('subject_list')
 
 
+# ===================== EXAM TERM MANAGEMENT =====================
+
+def exam_term_list(request):
+    """Admin view for listing exam terms"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    exam_terms = ExamTerm.objects.all()
+    return render(request, 'admin_portal/exam_term_list.html', {'exam_terms': exam_terms})
+
+def exam_term_add(request):
+    """Admin view for adding exam term"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+        
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        is_active = request.POST.get('is_active') == 'on'
+        
+        try:
+            ExamTerm.objects.create(name=name, description=description, is_active=is_active)
+            messages.success(request, 'Exam Term added successfully')
+            return redirect('exam_term_list')
+        except Exception as e:
+            messages.error(request, f'Error adding Exam Term: {str(e)}')
+            
+    return render(request, 'admin_portal/exam_term_form.html')
+
+def exam_term_edit(request, pk):
+    """Admin view for editing exam term"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+        
+    exam_term = get_object_or_404(ExamTerm, pk=pk)
+    
+    if request.method == 'POST':
+        exam_term.name = request.POST.get('name')
+        exam_term.description = request.POST.get('description', '')
+        exam_term.is_active = request.POST.get('is_active') == 'on'
+        
+        try:
+            exam_term.save()
+            messages.success(request, 'Exam Term updated successfully')
+            return redirect('exam_term_list')
+        except Exception as e:
+            messages.error(request, f'Error updating Exam Term: {str(e)}')
+            
+    return render(request, 'admin_portal/exam_term_form.html', {'exam_term': exam_term})
+
+def exam_term_delete(request, pk):
+    """Admin view for deleting exam term"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+        
+    exam_term = get_object_or_404(ExamTerm, pk=pk)
+    exam_term.delete()
+    messages.success(request, 'Exam Term deleted successfully')
+    return redirect('exam_term_list')
+
 # ===================== STUDENT PORTAL =====================
 
 def student_dashboard(request):
@@ -951,41 +1012,92 @@ def student_attendance_mark(request):
 # ===================== RESULTS MANAGEMENT =====================
 
 def result_list(request):
-    """Public view of all verified results"""
-    results = Result.objects.filter(verification_status='Verified').select_related(
-        'student', 'subject', 'student__student_class', 'submitted_by'
-    ).order_by('-exam_date', 'student__student_class', 'student__name')
+    """Public view for searching and displaying student results"""
+    school_info = SchoolInfo.objects.first()
     
-    # Filter by class
-    class_id = request.GET.get('class')
-    selected_class_id = None
-    if class_id:
+    # Get filters
+    student_id_raw = request.GET.get('student_id')
+    class_id = request.GET.get('class_id')
+    exam_name = request.GET.get('exam_name')
+    
+    if student_id_raw and class_id and exam_name:
+        # Extract numeric ID if it starts with MPS-
+        student_id_str = student_id_raw.strip().upper()
+        if student_id_str.startswith('MPS-'):
+            student_id_str = student_id_str[4:]
+            
         try:
-            selected_class_id = int(class_id)
-            results = results.filter(student__student_class_id=selected_class_id)
-        except (ValueError, TypeError):
-            pass
+            student_pk = int(student_id_str)
+            student = Student.objects.get(pk=student_pk, student_class_id=class_id, is_active=True)
+            
+            # Fetch verified results
+            results = Result.objects.filter(
+                student=student,
+                exam_name=exam_name,
+                verification_status='Verified'
+            ).select_related('subject').order_by('subject__subject_name')
+            
+            if not results.exists():
+                return render(request, 'result_list.html', {
+                    'classes': SchoolClass.objects.all(),
+                    'exam_names': ExamTerm.objects.filter(is_active=True).values_list('name', flat=True),
+                    'error': f'No verified results found for this exam.',
+                    'school_info': school_info
+                })
+                
+            # Calculate overall totals
+            total_marks_obtained = sum(r.marks_obtained for r in results)
+            total_marks_total = sum(r.total_marks for r in results)
+            overall_percentage = (total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0
+            
+            # Calculate overall grade
+            if overall_percentage >= 90:
+                overall_grade = 'A+'
+            elif overall_percentage >= 80:
+                overall_grade = 'A'
+            elif overall_percentage >= 70:
+                overall_grade = 'B+'
+            elif overall_percentage >= 60:
+                overall_grade = 'B'
+            elif overall_percentage >= 50:
+                overall_grade = 'C'
+            elif overall_percentage >= 33:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'F'
+                
+            result_status = 'PASS' if overall_percentage >= 33 else 'FAIL'
+            
+            context = {
+                'student': student,
+                'exam_name': exam_name,
+                'results': results,
+                'total_subjects': results.count(),
+                'total_marks_obtained': total_marks_obtained,
+                'total_marks_total': total_marks_total,
+                'overall_percentage': overall_percentage,
+                'overall_grade': overall_grade,
+                'result_status': result_status,
+                'school_info': school_info,
+            }
+            return render(request, 'public_result_card.html', context)
+            
+        except (ValueError, Student.DoesNotExist):
+            return render(request, 'result_list.html', {
+                'classes': SchoolClass.objects.all(),
+                'exam_names': ExamTerm.objects.filter(is_active=True).values_list('name', flat=True),
+                'error': 'Invalid Student ID/Roll No or Class combination.',
+                'school_info': school_info
+            })
     
-    # Filter by exam
-    exam_name = request.GET.get('exam')
-    if exam_name:
-        results = results.filter(exam_name__icontains=exam_name)
-    
+    # Just render the search form
     classes = SchoolClass.objects.all()
-    exam_names = Result.objects.filter(verification_status='Verified').values_list('exam_name', flat=True).distinct()
-    
-    # Get students who have verified results (for PDF download section)
-    students_with_results = Student.objects.filter(
-        results__verification_status='Verified'
-    ).distinct().order_by('student_class__class_name', 'name')
+    exam_names = ExamTerm.objects.filter(is_active=True).values_list('name', flat=True)
     
     context = {
-        'results': results,
         'classes': classes,
         'exam_names': exam_names,
-        'selected_class': selected_class_id,
-        'selected_exam': exam_name,
-        'students_with_results': students_with_results,
+        'school_info': school_info,
     }
     return render(request, 'result_list.html', context)
 
@@ -1001,29 +1113,42 @@ def result_submit(request):
     if request.method == 'POST':
         student_id = request.POST.get('student')
         exam_name = request.POST.get('exam_name')
-        subject_id = request.POST.get('subject')
-        marks_obtained = request.POST.get('marks_obtained')
-        total_marks = request.POST.get('total_marks')
         exam_date = request.POST.get('exam_date')
         remarks = request.POST.get('remarks', '')
         
+        # Arrays for multiple subjects
+        subject_ids = request.POST.getlist('subject[]')
+        marks_obtained_list = request.POST.getlist('marks_obtained[]')
+        total_marks_list = request.POST.getlist('total_marks[]')
+        
         try:
             student = Student.objects.get(pk=student_id)
-            subject = Subject.objects.get(pk=subject_id) if subject_id else None
             
-            result = Result.objects.create(
-                student=student,
-                exam_name=exam_name,
-                subject=subject,
-                marks_obtained=Decimal(marks_obtained),
-                total_marks=Decimal(total_marks),
-                exam_date=exam_date,
-                remarks=remarks,
-                submitted_by=teacher,
-                verification_status='Pending'
-            )
+            created_count = 0
+            for i in range(len(subject_ids)):
+                subject_id = subject_ids[i]
+                marks_obtained = marks_obtained_list[i] if i < len(marks_obtained_list) else None
+                total_marks = total_marks_list[i] if i < len(total_marks_list) else None
+                
+                if subject_id and marks_obtained and total_marks:
+                    subject = Subject.objects.get(pk=subject_id)
+                    Result.objects.create(
+                        student=student,
+                        exam_name=exam_name,
+                        subject=subject,
+                        marks_obtained=Decimal(marks_obtained),
+                        total_marks=Decimal(total_marks),
+                        exam_date=exam_date,
+                        remarks=remarks,
+                        submitted_by=teacher,
+                        verification_status='Pending'
+                    )
+                    created_count += 1
             
-            messages.success(request, f'Result submitted successfully for {student.name}. Pending admin verification.')
+            if created_count > 0:
+                messages.success(request, f'Successfully submitted {created_count} results for {student.name}. Pending admin verification.')
+            else:
+                messages.warning(request, 'No valid results were submitted. Please check the subjects and marks.')
             return redirect('result_submit')
         except Exception as e:
             messages.error(request, f'Error submitting result: {str(e)}')
@@ -1035,6 +1160,7 @@ def result_submit(request):
         students = Student.objects.filter(is_active=True)
     
     subjects = Subject.objects.all()
+    exam_terms = ExamTerm.objects.filter(is_active=True)
     
     # Get teacher's submitted results
     submitted_results = Result.objects.filter(submitted_by=teacher).select_related(
@@ -1045,6 +1171,7 @@ def result_submit(request):
         'teacher': teacher,
         'students': students,
         'subjects': subjects,
+        'exam_terms': exam_terms,
         'submitted_results': submitted_results,
     }
     return render(request, 'teacher/result_submit.html', context)
@@ -1169,10 +1296,8 @@ def result_download(request):
     else:
         students = Student.objects.filter(is_active=True)
     
-    # Get distinct exam names from verified results
-    exam_names = Result.objects.filter(
-        verification_status='Verified'
-    ).values_list('exam_name', flat=True).distinct()
+    # Get distinct exam names from active ExamTerms
+    exam_names = ExamTerm.objects.filter(is_active=True).values_list('name', flat=True)
     
     # Get actual SchoolClass objects for better filtering
     classes = SchoolClass.objects.all().order_by('class_name', 'section')
@@ -1453,3 +1578,160 @@ def serve_binary(request, model_name, record_id, field_name):
 def health_check(request):
     """Render and UptimeRobot health check endpoint"""
     return HttpResponse("OK", status=200)
+
+# ===================== ADMIT CARD (ADMIN) =====================
+
+def admin_admit_card_list(request):
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    requests = AdmitCardRequest.objects.all().order_by('-created_at')
+    return render(request, 'admin_portal/admit_card_request_list.html', {'requests': requests})
+
+def admin_admit_card_issue(request):
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+        
+    if request.method == 'POST':
+        class_id = request.POST.get('school_class')
+        term_id = request.POST.get('exam_term')
+        
+        try:
+            school_class = SchoolClass.objects.get(pk=class_id)
+            exam_term = ExamTerm.objects.get(pk=term_id)
+            admin = Admin.objects.get(pk=request.session.get('admin_id'))
+            
+            if AdmitCardRequest.objects.filter(school_class=school_class, exam_term=exam_term).exists():
+                messages.error(request, 'An admit card request for this class and exam term already exists.')
+            else:
+                AdmitCardRequest.objects.create(
+                    school_class=school_class,
+                    exam_term=exam_term,
+                    created_by=admin
+                )
+                messages.success(request, 'Admit card request issued successfully. Waiting for class teacher to schedule it.')
+                return redirect('admin_admit_card_list')
+        except Exception as e:
+            messages.error(request, f'Error issuing admit card: {str(e)}')
+            
+    classes = SchoolClass.objects.all()
+    terms = ExamTerm.objects.filter(is_active=True)
+    return render(request, 'admin_portal/admit_card_request_form.html', {'classes': classes, 'terms': terms})
+
+def admin_admit_card_delete(request, pk):
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+        
+    ac_request = get_object_or_404(AdmitCardRequest, pk=pk)
+    ac_request.delete()
+    messages.success(request, 'Admit card request deleted successfully.')
+    return redirect('admin_admit_card_list')
+
+# ===================== ADMIT CARD (TEACHER) =====================
+
+def teacher_admit_card_requests(request):
+    if request.session.get('user_type') != 'teacher':
+        return redirect('teacher_login')
+        
+    teacher = Teacher.objects.get(pk=request.session.get('teacher_id'))
+    if teacher.class_section:
+        requests = AdmitCardRequest.objects.filter(school_class=teacher.class_section).order_by('-created_at')
+    else:
+        requests = []
+        
+    return render(request, 'teacher/admit_card_requests.html', {'requests': requests, 'teacher': teacher})
+
+def teacher_admit_card_schedule(request, request_id):
+    if request.session.get('user_type') != 'teacher':
+        return redirect('teacher_login')
+        
+    ac_request = get_object_or_404(AdmitCardRequest, pk=request_id)
+    teacher = Teacher.objects.get(pk=request.session.get('teacher_id'))
+    
+    if ac_request.school_class != teacher.class_section:
+        messages.error(request, 'You can only schedule exams for your own class.')
+        return redirect('teacher_admit_card_requests')
+        
+    if request.method == 'POST':
+        subject_ids = request.POST.getlist('subject[]')
+        dates = request.POST.getlist('exam_date[]')
+        start_times = request.POST.getlist('start_time[]')
+        end_times = request.POST.getlist('end_time[]')
+        
+        try:
+            ExamSchedule.objects.filter(admit_card_request=ac_request).delete()
+            
+            for i in range(len(subject_ids)):
+                if subject_ids[i] and dates[i] and start_times[i] and end_times[i]:
+                    ExamSchedule.objects.create(
+                        admit_card_request=ac_request,
+                        subject_id=subject_ids[i],
+                        exam_date=dates[i],
+                        start_time=start_times[i],
+                        end_time=end_times[i]
+                    )
+                    
+            ac_request.is_published = True
+            ac_request.save()
+            
+            messages.success(request, 'Exam schedule published successfully. Students can now download their admit cards.')
+            return redirect('teacher_admit_card_requests')
+        except Exception as e:
+            messages.error(request, f'Error saving schedule: {str(e)}')
+            
+    schedules = ExamSchedule.objects.filter(admit_card_request=ac_request)
+    subjects = Subject.objects.all()
+    
+    return render(request, 'teacher/admit_card_schedule_form.html', {
+        'ac_request': ac_request,
+        'schedules': schedules,
+        'subjects': subjects,
+        'teacher': teacher
+    })
+
+# ===================== ADMIT CARD (PUBLIC) =====================
+
+def public_admit_card_search(request):
+    school_info = SchoolInfo.objects.first()
+    classes = SchoolClass.objects.all()
+    
+    student_id_raw = request.GET.get('student_id')
+    class_id = request.GET.get('class_id')
+    
+    if student_id_raw and class_id:
+        student_id_str = student_id_raw.strip().upper()
+        if student_id_str.startswith('MPS-'):
+            student_id_str = student_id_str[4:]
+            
+        try:
+            student_pk = int(student_id_str)
+            student = Student.objects.get(pk=student_pk, student_class_id=class_id, is_active=True)
+            
+            ac_requests = AdmitCardRequest.objects.filter(school_class_id=class_id, is_published=True).order_by('-created_at')
+            
+            if not ac_requests.exists():
+                return render(request, 'admit_card_search.html', {
+                    'classes': classes,
+                    'error': 'No admit card published for this class yet.',
+                    'school_info': school_info
+                })
+                
+            ac_request = ac_requests.first()
+            schedules = ExamSchedule.objects.filter(admit_card_request=ac_request).order_by('exam_date', 'start_time')
+            
+            return render(request, 'public_admit_card.html', {
+                'student': student,
+                'ac_request': ac_request,
+                'schedules': schedules,
+                'school_info': school_info
+            })
+            
+        except (ValueError, Student.DoesNotExist):
+            return render(request, 'admit_card_search.html', {
+                'classes': classes,
+                'error': 'Invalid Student ID or Class combination.',
+                'school_info': school_info
+            })
+            
+    return render(request, 'admit_card_search.html', {'classes': classes, 'school_info': school_info})
+

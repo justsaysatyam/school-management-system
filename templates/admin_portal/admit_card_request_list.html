@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Issue Admit Cards - Mid Point School{% endblock %}
+
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'admin_portal/sidebar.html' %}
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">Admit Card Requests</h1>
+            <a href="{% url 'admin_admit_card_issue' %}" class="btn btn-primary">➕ Issue New Admit Card</a>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Exam Term</th>
+                            <th>Status</th>
+                            <th>Issued By</th>
+                            <th>Date Issued</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td><strong>{{ req.school_class }}</strong></td>
+                            <td>{{ req.exam_term.name }}</td>
+                            <td>
+                                {% if req.is_published %}
+                                <span class="badge badge-success">Published</span>
+                                {% else %}
+                                <span class="badge badge-warning">Pending Teacher</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.created_by.name|default:"Admin" }}</td>
+                            <td>{{ req.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'admin_admit_card_delete' req.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this admit card request?');">Delete</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No admit card requests found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

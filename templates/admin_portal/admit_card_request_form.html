@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Issue Admit Card - Mid Point School{% endblock %}
+
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'admin_portal/sidebar.html' %}
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">Issue Admit Card Request</h1>
+            <a href="{% url 'admin_admit_card_list' %}" class="btn btn-secondary">← Back to List</a>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <div class="form-container" style="max-width: 600px;">
+                <form method="POST" action="{% url 'admin_admit_card_issue' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Select Class</label>
+                        <select name="school_class" required class="form-control">
+                            <option value="">-- Select Class --</option>
+                            {% for cls in classes %}
+                            <option value="{{ cls.id }}">{{ cls.class_name }} - {{ cls.section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Select Exam Term</label>
+                        <select name="exam_term" required class="form-control">
+                            <option value="">-- Select Exam Term --</option>
+                            {% for term in terms %}
+                            <option value="{{ term.id }}">{{ term.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary w-100">Issue Request to Class Teacher</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    .w-100 {
+        width: 100%;
+    }
+</style>
+{% endblock %}

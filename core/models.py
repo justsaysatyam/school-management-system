@@ -274,6 +274,22 @@ class Event(models.Model):
         return f"{self.title} - {self.event_date}"
 
 
+class ExamTerm(models.Model):
+    """Admin defined Exam terms/types (e.g., Half Yearly, Annual)"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Exam Term"
+        verbose_name_plural = "Exam Terms"
+
+    def __str__(self):
+        return self.name
+
+
 class Exam(models.Model):
     """Exam schedule model"""
     exam_name = models.CharField(max_length=100)
@@ -462,3 +478,24 @@ class Inquiry(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+class AdmitCardRequest(models.Model):
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE)
+    exam_term = models.ForeignKey(ExamTerm, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True)
+    is_published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.school_class} - {self.exam_term}"
+
+class ExamSchedule(models.Model):
+    admit_card_request = models.ForeignKey(AdmitCardRequest, on_delete=models.CASCADE, related_name='schedules')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    exam_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return f"{self.subject} on {self.exam_date}"

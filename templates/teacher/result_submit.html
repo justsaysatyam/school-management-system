@@ -187,30 +187,12 @@
 
                 <div class="form-group">
                     <label for="exam_name">Exam Name *</label>
-                    <input type="text" name="exam_name" id="exam_name" placeholder="e.g., Half Yearly, Annual Exam"
-                        required>
-                </div>
-
-                <div class="form-group">
-                    <label for="subject">Subject *</label>
-                    <select name="subject" id="subject" required>
-                        <option value="">Select Subject</option>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+                    <select name="exam_name" id="exam_name" required>
+                        <option value="">Select Exam</option>
+                        {% for term in exam_terms %}
+                        <option value="{{ term.name }}">{{ term.name }}</option>
                         {% endfor %}
                     </select>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label for="marks_obtained">Marks Obtained *</label>
-                        <input type="number" step="0.01" name="marks_obtained" id="marks_obtained" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="total_marks">Total Marks *</label>
-                        <input type="number" step="0.01" name="total_marks" id="total_marks" required>
-                    </div>
                 </div>
 
                 <div class="form-group">
@@ -218,14 +200,87 @@
                     <input type="date" name="exam_date" id="exam_date" required>
                 </div>
 
+                <div class="subjects-container" id="subjects-container">
+                    <div class="subject-row" style="background: #f9f9f9; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #e0e0e0; position: relative;">
+                        <h4 style="margin-top: 0; color: #333; margin-bottom: 1rem;">Subject 1</h4>
+                        <div class="form-group">
+                            <label>Subject *</label>
+                            <select name="subject[]" required>
+                                <option value="">Select Subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Marks Obtained *</label>
+                                <input type="number" step="0.01" name="marks_obtained[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Total Marks *</label>
+                                <input type="number" step="0.01" name="total_marks[]" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <button type="button" id="add-subject-btn" class="btn btn-outline" style="background: #e0e7ff; color: #4f46e5; border: 1px dashed #4f46e5; width: 100%;">+ Add Another Subject</button>
+                </div>
+
                 <div class="form-group">
                     <label for="remarks">Remarks (Optional)</label>
                     <textarea name="remarks" id="remarks" rows="3" placeholder="Any additional notes..."></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Submit Result for Verification</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Results for Verification</button>
             </form>
         </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addBtn = document.getElementById('add-subject-btn');
+        const container = document.getElementById('subjects-container');
+        let subjectCount = 1;
+
+        const subjectOptions = `
+            <option value="">Select Subject</option>
+            {% for subject in subjects %}
+            <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+            {% endfor %}
+        `;
+
+        addBtn.addEventListener('click', function() {
+            subjectCount++;
+            const row = document.createElement('div');
+            row.className = 'subject-row animate-slideUp';
+            row.style.cssText = 'background: #f9f9f9; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #e0e0e0; position: relative;';
+            
+            row.innerHTML = `
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()" style="position: absolute; right: 1rem; top: 1rem; background: #fee2e2; color: #ef4444; border: none; border-radius: 5px; cursor: pointer; padding: 0.3rem 0.6rem;">✕ Remove</button>
+                <h4 style="margin-top: 0; color: #333; margin-bottom: 1rem;">Subject ${subjectCount}</h4>
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <select name="subject[]" required>
+                        ${subjectOptions}
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Marks Obtained *</label>
+                        <input type="number" step="0.01" name="marks_obtained[]" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Marks *</label>
+                        <input type="number" step="0.01" name="total_marks[]" required>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    });
+</script>
 
         <div class="results-card">
             <h2 style="margin-top: 0; color: #667eea;">Your Submitted Results</h2>

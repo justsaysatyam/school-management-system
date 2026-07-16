@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Set Exam Schedule - Teacher Portal{% endblock %}
+
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'teacher/sidebar.html' %}
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">Set Exam Schedule</h1>
+            <a href="{% url 'teacher_admit_card_requests' %}" class="btn btn-secondary">← Back</a>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <p><strong>Class:</strong> {{ ac_request.school_class }}</p>
+            <p><strong>Exam:</strong> {{ ac_request.exam_term.name }}</p>
+            <p><strong>Status:</strong> {% if ac_request.is_published %}Published{% else %}Pending{% endif %}</p>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="table-container">
+                    <table class="table" id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Exam Date</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if schedules %}
+                                {% for schedule in schedules %}
+                                <tr>
+                                    <td>
+                                        <select name="subject[]" class="form-control" required>
+                                            <option value="">Select Subject</option>
+                                            {% for sub in subjects %}
+                                            <option value="{{ sub.id }}" {% if schedule.subject_id == sub.id %}selected{% endif %}>{{ sub.subject_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="date" name="exam_date[]" class="form-control" value="{{ schedule.exam_date|date:'Y-m-d' }}" required></td>
+                                    <td><input type="time" name="start_time[]" class="form-control" value="{{ schedule.start_time|time:'H:i' }}" required></td>
+                                    <td><input type="time" name="end_time[]" class="form-control" value="{{ schedule.end_time|time:'H:i' }}" required></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">X</button></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td>
+                                        <select name="subject[]" class="form-control" required>
+                                            <option value="">Select Subject</option>
+                                            {% for sub in subjects %}
+                                            <option value="{{ sub.id }}">{{ sub.subject_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="date" name="exam_date[]" class="form-control" required></td>
+                                    <td><input type="time" name="start_time[]" class="form-control" required></td>
+                                    <td><input type="time" name="end_time[]" class="form-control" required></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">X</button></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1rem; display: flex; justify-content: space-between;">
+                    <button type="button" class="btn btn-secondary" onclick="addRow()">+ Add Subject</button>
+                    <button type="submit" class="btn btn-primary">Publish Admit Card</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+function addRow() {
+    const tbody = document.querySelector('#scheduleTable tbody');
+    const firstRow = tbody.querySelector('tr');
+    
+    if (firstRow) {
+        const newRow = firstRow.cloneNode(true);
+        // Clear values
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelector('select').selectedIndex = 0;
+        tbody.appendChild(newRow);
+    } else {
+        // If table is empty, reload page to get template or construct raw HTML
+        window.location.reload(); 
+    }
+}
+</script>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+    }
+</style>
+{% endblock %}

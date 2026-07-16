@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admit Card - {{ student.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff7e5f;
+            --primary-dark: #e86144;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 2rem;
+            color: var(--text-dark);
+        }
+
+        /* Controls */
+        .controls {
+            max-width: 900px;
+            margin: 0 auto 2rem auto;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-back {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+            margin-right: auto;
+        }
+
+        .btn-print {
+            background: var(--text-dark);
+            color: white;
+        }
+
+        .btn-download {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* A4 Paper Setup */
+        .admit-card-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .border-wrapper {
+            border: 4px double var(--primary);
+            padding: 20px;
+            height: 100%;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .school-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .school-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+        }
+
+        .school-address {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .title-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Content */
+        .student-details {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .detail-item {
+            font-size: 15px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            display: inline-block;
+            width: 110px;
+        }
+
+        .detail-value {
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .photo-box {
+            width: 130px;
+            height: 150px;
+            border: 2px solid var(--border);
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #cbd5e1;
+            font-size: 12px;
+            text-align: center;
+            background: #f8fafc;
+        }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Schedule Table */
+        .schedule-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            text-align: center;
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        td {
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        .instructions {
+            margin-bottom: 40px;
+        }
+
+        .instructions h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-dark);
+        }
+
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+        }
+
+        .sign-box {
+            text-align: center;
+        }
+
+        .sign-line {
+            width: 150px;
+            border-top: 1px solid var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .sign-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .controls {
+                display: none;
+            }
+            .admit-card-container {
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="btn btn-back" onclick="window.location.href='{% url 'public_admit_card_search' %}'">← Back to Search</button>
+        <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
+        <button class="btn btn-download" onclick="window.print()">📥 Save as PDF</button>
+    </div>
+
+    <div class="admit-card-container">
+        <div class="border-wrapper">
+            <!-- Header -->
+            <div class="header">
+                {% if school_info and school_info.logo %}
+                <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" class="logo">
+                {% else %}
+                <img src="{% static 'images/logo.png' %}" class="logo">
+                {% endif %}
+                
+                <div class="school-info">
+                    <h1 class="school-name">{{ school_info.name|default:"MID POINT SCHOOL" }}</h1>
+                    <p class="school-address">{{ school_info.address|default:"School Address goes here" }}</p>
+                    <p class="school-address">Phone: {{ school_info.phone|default:"N/A" }} | Email: {{ school_info.email|default:"N/A" }}</p>
+                    <div class="title-badge">EXAMINATION ADMIT CARD</div>
+                </div>
+
+                <div style="width: 100px;"></div> <!-- Spacer for flex balance -->
+            </div>
+
+            <!-- Student Details -->
+            <div class="student-details">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Exam Name:</span>
+                        <span class="detail-value" style="color: var(--primary-dark);">{{ ac_request.exam_term.name|upper }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Roll No:</span>
+                        <span class="detail-value">MPS-{{ student.pk|stringformat:"04d" }}</span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Student Name:</span>
+                        <span class="detail-value">{{ student.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Class:</span>
+                        <span class="detail-value">{{ student.student_class.class_name }} - {{ student.student_class.section }}</span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Father's Name:</span>
+                        <span class="detail-value">{{ student.father_name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">DOB:</span>
+                        <span class="detail-value">{{ student.dob|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+
+                <div class="photo-box">
+                    {% if student.photo %}
+                    <img src="{% url 'serve_binary' 'Student' student.id 'photo' %}" alt="Student Photo">
+                    {% else %}
+                    Affix Passport Size Photo Here
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Schedule Table -->
+            <div class="schedule-title">EXAM TIME TABLE</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Exam Date</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                    <tr>
+                        <td>{{ schedule.subject.subject_name }}</td>
+                        <td>{{ schedule.exam_date|date:"l, M d, Y" }}</td>
+                        <td>{{ schedule.start_time|time:"h:i A" }}</td>
+                        <td>{{ schedule.end_time|time:"h:i A" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted);">No schedule published yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Instructions -->
+            <div class="instructions">
+                <h4>Important Instructions:</h4>
+                <ul>
+                    <li>Candidates must bring this Admit Card to the examination hall. Without it, entry will not be permitted.</li>
+                    <li>Students must report to the examination center at least 15 minutes before the start time.</li>
+                    <li>Electronic devices (mobile phones, smartwatches, calculators) are strictly prohibited inside the hall.</li>
+                    <li>Any unfair means will lead to immediate cancellation of the exam.</li>
+                </ul>
+            </div>
+
+            <!-- Signatures -->
+            <div class="signatures">
+                <div class="sign-box">
+                    <div class="sign-line"></div>
+                    <div class="sign-label">Student's Signature</div>
+                </div>
+                <div class="sign-box">
+                    <div class="sign-line"></div>
+                    <div class="sign-label">Class Teacher</div>
+                </div>
+                <div class="sign-box">
+                    <div class="sign-line"></div>
+                    <div class="sign-label">Principal</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

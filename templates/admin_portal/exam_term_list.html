@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exam Terms - Mid Point School{% endblock %}
+
+{% block body %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
+            <div>
+                <h2>Mid Point School</h2>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                        <span class="icon">📊</span> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'student_list' %}" class="nav-link">
+                        <span class="icon">🎓</span> Students
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'teacher_list' %}" class="nav-link">
+                        <span class="icon">👨‍🏫</span> Teachers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'class_list' %}" class="nav-link">
+                        <span class="icon">🏛️</span> Classes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'subject_list' %}" class="nav-link">
+                        <span class="icon">📚</span> Subjects
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'exam_term_list' %}" class="nav-link active">
+                        <span class="icon">📝</span> Exam Terms
+                    </a>
+                </li>
+                <li class="nav-item" style="margin-top: 2rem;">
+                    <a href="{% url 'logout' %}" class="nav-link">
+                        <span class="icon">🚪</span> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">📝 Exam Terms</h1>
+            <a href="{% url 'exam_term_add' %}" class="btn btn-primary">➕ Add Exam Term</a>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card animate-slideUp">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam_term in exam_terms %}
+                        <tr>
+                            <td><strong>{{ exam_term.name }}</strong></td>
+                            <td>{{ exam_term.description }}</td>
+                            <td>
+                                {% if exam_term.is_active %}
+                                <span class="badge badge-success" style="background: #d1fae5; color: #065f46; padding: 0.2rem 0.5rem; border-radius: 10px;">Active</span>
+                                {% else %}
+                                <span class="badge badge-danger" style="background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 10px;">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <a href="{% url 'exam_term_edit' exam_term.pk %}" class="btn btn-sm btn-info" style="background: #60a5fa; color: white; border:none; padding: 0.3rem 0.6rem; border-radius: 5px; text-decoration: none;">
+                                    ✏️ Edit
+                                </a>
+                                <a href="{% url 'exam_term_delete' exam_term.pk %}" class="btn btn-sm btn-danger" style="background: #ef4444; color: white; border:none; padding: 0.3rem 0.6rem; border-radius: 5px; text-decoration: none;" onclick="return confirm('Are you sure you want to delete this exam term?')">
+                                    🗑️ Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No exam terms added yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

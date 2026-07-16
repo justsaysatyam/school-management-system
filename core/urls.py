@@ -52,6 +52,12 @@ urlpatterns = [
     path('admin/subjects/add/', views.subject_add, name='subject_add'),
     path('admin/subjects/<int:pk>/delete/', views.subject_delete, name='subject_delete'),
     
+    # Exam Term Management (Admin)
+    path('admin/exam-terms/', views.exam_term_list, name='exam_term_list'),
+    path('admin/exam-terms/add/', views.exam_term_add, name='exam_term_add'),
+    path('admin/exam-terms/<int:pk>/edit/', views.exam_term_edit, name='exam_term_edit'),
+    path('admin/exam-terms/<int:pk>/delete/', views.exam_term_delete, name='exam_term_delete'),
+    
     # Teacher Attendance Management (Admin)
     path('admin/teacher-attendance/', views.teacher_attendance_list, name='teacher_attendance_list'),
     path('admin/teacher-attendance/mark/', views.teacher_attendance_mark, name='teacher_attendance_mark'),
@@ -82,6 +88,18 @@ urlpatterns = [
     # Result PDF Download (Teacher Portal)
     path('teacher/results/download/', views.result_download, name='result_download'),
     path('teacher/results/pdf/<int:student_id>/', views.result_pdf, name='teacher_result_pdf'),
+    
+    # Admit Card Management (Admin)
+    path('admin/admit-cards/', views.admin_admit_card_list, name='admin_admit_card_list'),
+    path('admin/admit-cards/issue/', views.admin_admit_card_issue, name='admin_admit_card_issue'),
+    path('admin/admit-cards/<int:pk>/delete/', views.admin_admit_card_delete, name='admin_admit_card_delete'),
+    
+    # Admit Card Management (Teacher)
+    path('teacher/admit-cards/', views.teacher_admit_card_requests, name='teacher_admit_card_requests'),
+    path('teacher/admit-cards/<int:request_id>/schedule/', views.teacher_admit_card_schedule, name='teacher_admit_card_schedule'),
+    
+    # Admit Card (Public Portal)
+    path('admit-card/', views.public_admit_card_search, name='public_admit_card_search'),
     
     # Gallery Management
     path('admin/gallery/', views.gallery_list, name='gallery_list'),
