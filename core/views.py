@@ -51,6 +51,45 @@ def home(request):
     return render(request, 'home.html', context)
 
 
+def about_us(request):
+    """About Us page view with Vision, Mission, and Managing Director details"""
+    school_info = SchoolInfo.objects.first()
+    if not school_info:
+        school_info = SchoolInfo.objects.create()
+    
+    context = {
+        'school_info': school_info,
+        'md_name': 'Bhanu Kumar Singh',
+        'md_designation': 'Managing Director',
+    }
+    return render(request, 'about_us.html', context)
+
+
+def contact_us(request):
+    """Contact Us page view with public inquiry submission form"""
+    school_info = SchoolInfo.objects.first()
+    if not school_info:
+        school_info = SchoolInfo.objects.create()
+    
+    if request.method == 'POST' and 'inquiry_submit' in request.POST:
+        form = InquiryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your inquiry has been submitted successfully! We will get back to you shortly.')
+            return redirect('contact_us')
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+    else:
+        form = InquiryForm()
+    
+    context = {
+        'school_info': school_info,
+        'form': form,
+    }
+    return render(request, 'contact_us.html', context)
+
+
+
 def admin_login(request):
     """Admin login view"""
     if request.method == 'POST':

@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About Us - {{ school_info.school_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0a0e27;
+        color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* Header Navbar */
+    .header-navbar {
+        background: rgba(10, 14, 39, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .nav-logo-img {
+        height: 48px;
+        width: 48px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+
+    .nav-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff 0%, #feb47b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .nav-menu {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        list-style: none;
+    }
+
+    .nav-item a {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-item a:hover, .nav-item.active a {
+        color: #ffffff;
+        background: rgba(102, 126, 234, 0.25);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .user-icon-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .user-icon-btn:hover {
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.7);
+        transform: translateY(-2px);
+    }
+
+    /* Portal Menu Modal/Dropdown */
+    .portal-dropdown {
+        position: relative;
+    }
+
+    .portal-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 120%;
+        background: #131b3e;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 0.8rem;
+        width: 220px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        z-index: 1001;
+    }
+
+    .portal-dropdown:hover .portal-menu {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .portal-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.7rem 1rem;
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+    .portal-menu-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Hero Banner */
+    .about-hero {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%),
+                    url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop') center/cover;
+        padding: 6rem 2rem 5rem 2rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .about-hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .about-hero p {
+        font-size: 1.25rem;
+        max-width: 700px;
+        margin: 0 auto;
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+
+    /* Section Wrapper */
+    .section-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 5rem 2rem;
+    }
+
+    /* Grid layout */
+    .vision-mission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2.5rem;
+        margin-bottom: 5rem;
+    }
+
+    .vision-card, .mission-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .vision-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    }
+
+    .mission-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    .vision-card:hover, .mission-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .vision-card .card-badge {
+        background: rgba(255, 126, 95, 0.15);
+        color: #ff7e5f;
+    }
+
+    .mission-card .card-badge {
+        background: rgba(102, 126, 234, 0.15);
+        color: #667eea;
+    }
+
+    .card-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+        color: white;
+    }
+
+    .card-text {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .card-list {
+        margin-top: 1.5rem;
+        list-style: none;
+    }
+
+    .card-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 0.8rem;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .card-list li span {
+        color: #feb47b;
+        font-weight: bold;
+    }
+
+    /* Managing Director Section */
+    .md-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 30px;
+        padding: 4rem 3rem;
+        margin-bottom: 4rem;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .md-header-title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 3rem;
+        background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .md-content-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 3.5rem;
+        align-items: center;
+    }
+
+    .md-image-card {
+        text-align: center;
+        position: relative;
+    }
+
+    .md-img-frame {
+        width: 280px;
+        height: 350px;
+        margin: 0 auto;
+        border-radius: 24px;
+        padding: 8px;
+        background: linear-gradient(135deg, #ff7e5f, #667eea, #764ba2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        transition: transform 0.4s ease;
+    }
+
+    .md-img-frame:hover {
+        transform: scale(1.03);
+    }
+
+    .md-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 18px;
+    }
+
+    .md-name-tag {
+        margin-top: 1.5rem;
+    }
+
+    .md-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .md-role {
+        font-size: 1.1rem;
+        color: #feb47b;
+        font-weight: 600;
+        letter-spacing: 1px;
+        margin-top: 4px;
+        text-transform: uppercase;
+    }
+
+    .md-quote-box {
+        position: relative;
+        padding-left: 2rem;
+        border-left: 4px solid #ff7e5f;
+    }
+
+    .quote-icon {
+        font-size: 3rem;
+        color: rgba(255, 126, 95, 0.4);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .md-message {
+        font-size: 1.15rem;
+        line-height: 1.9;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1.5rem;
+    }
+
+    .md-signature-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #feb47b;
+    }
+
+    /* Footer */
+    .footer {
+        background: #060817;
+        color: white;
+        text-align: center;
+        padding: 3rem 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+        color: #feb47b;
+    }
+
+    @media (max-width: 900px) {
+        .md-content-grid {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .md-quote-box {
+            padding-left: 0;
+            border-left: none;
+            border-top: 3px solid #ff7e5f;
+            padding-top: 2rem;
+        }
+
+        .nav-menu {
+            gap: 0.8rem;
+        }
+
+        .about-hero h1 {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<!-- Sticky Navigation Header -->
+<header class="header-navbar">
+    <div class="nav-container">
+        <a href="{% url 'home' %}" class="nav-brand">
+            {% if school_info.logo %}
+                <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" class="nav-logo-img">
+            {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="nav-logo-img">
+            {% endif %}
+            <span class="nav-title">{{ school_info.school_name }}</span>
+        </a>
+
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="{% url 'home' %}">🏠 Home</a></li>
+            <li class="nav-item active"><a href="{% url 'about_us' %}">🏫 About Us</a></li>
+            <li class="nav-item"><a href="{% url 'contact_us' %}">📞 Contact Us</a></li>
+            <li class="nav-item"><a href="{% url 'result_list' %}">📊 Results</a></li>
+            
+            <li class="nav-item portal-dropdown">
+                <a href="#" class="user-icon-btn">👤 User Login ▾</a>
+                <div class="portal-menu">
+                    <a href="{% url 'admin_login' %}" class="portal-menu-item">👨‍💼 Admin Portal</a>
+                    <a href="{% url 'teacher_login' %}" class="portal-menu-item">👨‍🏫 Teacher Portal</a>
+                    <a href="{% url 'student_login' %}" class="portal-menu-item">🎓 Student Portal</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<!-- Hero Section -->
+<section class="about-hero">
+    <h1>About Our Institution</h1>
+    <p>Nurturing young minds with holistic education, moral values, and modern academic excellence to build the leaders of tomorrow.</p>
+</section>
+
+<!-- Vision & Mission Section -->
+<div class="section-wrapper">
+    
+    <div class="vision-mission-grid">
+        <!-- Our Vision Section -->
+        <div class="vision-card">
+            <div class="card-badge">🌟</div>
+            <h2 class="card-title">Our Vision</h2>
+            <p class="card-text">
+                To be a beacon of educational excellence that empowers every child to discover their full potential, develop strong moral character, and become compassionate, innovative global citizens.
+            </p>
+            <ul class="card-list">
+                <li><span>✓</span> Fostering academic rigor paired with creative thinking.</li>
+                <li><span>✓</span> Building confidence, ethics, and emotional intelligence.</li>
+                <li><span>✓</span> Preparing students for future digital & scientific advancements.</li>
+            </ul>
+        </div>
+
+        <!-- Our Mission Section -->
+        <div class="mission-card">
+            <div class="card-badge">🎯</div>
+            <h2 class="card-title">Our Mission</h2>
+            <p class="card-text">
+                Our mission is to provide an inclusive, stimulating, and safe learning environment where physical, intellectual, and moral growth are cultivated hand in hand.
+            </p>
+            <ul class="card-list">
+                <li><span>✓</span> Delivering quality curriculum with dedicated faculty support.</li>
+                <li><span>✓</span> Promoting physical fitness through regular exercise and sports.</li>
+                <li><span>✓</span> Instilling respect, discipline, and lifelong learning habits.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Managing Director Section -->
+    <section class="md-section">
+        <h2 class="md-header-title">Message from the Managing Director</h2>
+        
+        <div class="md-content-grid">
+            <div class="md-image-card">
+                <div class="md-img-frame">
+                    <img src="{% static 'images/md_bhanu_kumar_singh.jpg' %}" alt="Bhanu Kumar Singh - Managing Director" class="md-img">
+                </div>
+                <div class="md-name-tag">
+                    <div class="md-name">Bhanu Kumar Singh</div>
+                    <div class="md-role">Managing Director</div>
+                </div>
+            </div>
+
+            <div class="md-quote-box">
+                <div class="quote-icon">“</div>
+                <p class="md-message">
+                    Welcome to <strong>{{ school_info.school_name }}</strong>. Education is not merely the accumulation of knowledge; it is the transformation of character and the lighting of a flame of curiosity.
+                </p>
+                <p class="md-message">
+                    Our relentless endeavor is to foster an atmosphere where every student feels valued, inspired, and motivated to achieve their highest ambitions. We believe that with discipline, proper guidance, and a supportive environment, every student can reach remarkable heights.
+                </p>
+                <div class="md-signature-text">
+                    Warm regards,<br>
+                    <strong>Bhanu Kumar Singh</strong><br>
+                    <small style="color: rgba(255,255,255,0.7); font-weight: normal;">Managing Director, {{ school_info.school_name }}</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'about_us' %}">About Us</a>
+        <a href="{% url 'contact_us' %}">Contact Us</a>
+        <a href="{% url 'result_list' %}">Results</a>
+        <a href="{% url 'admin_login' %}">Admin</a>
+        <a href="{% url 'teacher_login' %}">Teachers</a>
+        <a href="{% url 'student_login' %}">Students</a>
+    </div>
+
+    <p style="margin-top: 1.5rem; opacity: 0.7;">
+        &copy; {{ school_info.established_year }}-2026 {{ school_info.school_name }}. All rights reserved.
+    </p>
+    <p style="margin-top: 0.5rem; opacity: 0.6;">
+        📍 {{ school_info.address }} | 📞 {{ school_info.contact_number }} | 📧 {{ school_info.email }}
+    </p>
+</footer>
+
+{% endblock %}

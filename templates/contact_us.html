@@ -1,0 +1,554 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - {{ school_info.school_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0a0e27;
+        color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* Header Navbar */
+    .header-navbar {
+        background: rgba(10, 14, 39, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .nav-logo-img {
+        height: 48px;
+        width: 48px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+
+    .nav-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff 0%, #feb47b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .nav-menu {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        list-style: none;
+    }
+
+    .nav-item a {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-item a:hover, .nav-item.active a {
+        color: #ffffff;
+        background: rgba(102, 126, 234, 0.25);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .user-icon-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .user-icon-btn:hover {
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.7);
+        transform: translateY(-2px);
+    }
+
+    /* Portal Menu Modal/Dropdown */
+    .portal-dropdown {
+        position: relative;
+    }
+
+    .portal-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 120%;
+        background: #131b3e;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 0.8rem;
+        width: 220px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        z-index: 1001;
+    }
+
+    .portal-dropdown:hover .portal-menu {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .portal-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.7rem 1rem;
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+    .portal-menu-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Hero Banner */
+    .contact-hero {
+        background: linear-gradient(135deg, rgba(254, 180, 123, 0.8) 0%, rgba(255, 126, 95, 0.8) 100%),
+                    url('https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1200&auto=format&fit=crop') center/cover;
+        padding: 6rem 2rem 5rem 2rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .contact-hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .contact-hero p {
+        font-size: 1.25rem;
+        max-width: 700px;
+        margin: 0 auto;
+        opacity: 0.95;
+        line-height: 1.6;
+    }
+
+    /* Main Container */
+    .contact-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+    }
+
+    /* Grid Layout */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr;
+        gap: 3rem;
+    }
+
+    /* Contact Info Cards */
+    .contact-info-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .info-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        padding: 1.8rem 2rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(102, 126, 234, 0.4);
+    }
+
+    .info-icon {
+        font-size: 2.2rem;
+        background: rgba(102, 126, 234, 0.15);
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .info-details h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        color: #feb47b;
+    }
+
+    .info-details p {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.5;
+    }
+
+    /* Form Card */
+    .form-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 28px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-card-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #ffffff 0%, #feb47b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .form-card-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 2rem;
+    }
+
+    .inquiry-form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .inquiry-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .inquiry-input {
+        width: 100%;
+        padding: 1rem 1.2rem;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid transparent;
+        border-radius: 14px;
+        font-size: 1rem;
+        color: #1a202c;
+        transition: all 0.3s ease;
+    }
+
+    .inquiry-input:focus {
+        outline: none;
+        background: #ffffff;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+    }
+
+    .submit-inquiry-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 8px 20px rgba(255, 126, 95, 0.4);
+    }
+
+    .submit-inquiry-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(255, 126, 95, 0.6);
+    }
+
+    /* Flash Messages */
+    .alert-msg {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .alert-success {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid #10b981;
+        color: #6ee7b7;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+    }
+
+    /* Footer */
+    .footer {
+        background: #060817;
+        color: white;
+        text-align: center;
+        padding: 3rem 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 4rem;
+    }
+
+    .footer-links {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+        color: #feb47b;
+    }
+
+    @media (max-width: 900px) {
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-hero h1 {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<!-- Sticky Navigation Header -->
+<header class="header-navbar">
+    <div class="nav-container">
+        <a href="{% url 'home' %}" class="nav-brand">
+            {% if school_info.logo %}
+                <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" class="nav-logo-img">
+            {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="nav-logo-img">
+            {% endif %}
+            <span class="nav-title">{{ school_info.school_name }}</span>
+        </a>
+
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="{% url 'home' %}">🏠 Home</a></li>
+            <li class="nav-item"><a href="{% url 'about_us' %}">🏫 About Us</a></li>
+            <li class="nav-item active"><a href="{% url 'contact_us' %}">📞 Contact Us</a></li>
+            <li class="nav-item"><a href="{% url 'result_list' %}">📊 Results</a></li>
+            
+            <li class="nav-item portal-dropdown">
+                <a href="#" class="user-icon-btn">👤 User Login ▾</a>
+                <div class="portal-menu">
+                    <a href="{% url 'admin_login' %}" class="portal-menu-item">👨‍💼 Admin Portal</a>
+                    <a href="{% url 'teacher_login' %}" class="portal-menu-item">👨‍🏫 Teacher Portal</a>
+                    <a href="{% url 'student_login' %}" class="portal-menu-item">🎓 Student Portal</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<!-- Hero Section -->
+<section class="contact-hero">
+    <h1>Get In Touch With Us</h1>
+    <p>Have questions about admissions, academics, or campus events? Send us an inquiry or visit our office!</p>
+</section>
+
+<!-- Main Contact & Inquiry Section -->
+<div class="contact-container">
+    <div class="contact-grid">
+        
+        <!-- Contact Information Cards -->
+        <div class="contact-info-wrapper">
+            <div class="info-card">
+                <div class="info-icon">📍</div>
+                <div class="info-details">
+                    <h3>School Address</h3>
+                    <p>{{ school_info.address }}</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">📞</div>
+                <div class="info-details">
+                    <h3>Phone & Support</h3>
+                    <p>{{ school_info.contact_number }}</p>
+                    <p>Mon - Sat (8:00 AM - 4:00 PM)</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">📧</div>
+                <div class="info-details">
+                    <h3>Email Address</h3>
+                    <p>{{ school_info.email }}</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">👨‍💼</div>
+                <div class="info-details">
+                    <h3>Leadership Contact</h3>
+                    <p><strong>Managing Director:</strong> Bhanu Kumar Singh</p>
+                    <p><strong>Director:</strong> {{ school_info.director_name }}</p>
+                    <p><strong>Principal:</strong> {{ school_info.principal_name }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inquiry Form Card -->
+        <div class="form-card">
+            <h2 class="form-card-title">Send Us An Inquiry</h2>
+            <p class="form-card-subtitle">Fill out the inquiry form below and our administration team will respond promptly.</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-msg {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="{% url 'contact_us' %}">
+                {% csrf_token %}
+                
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Full Name *</label>
+                    <input type="text" name="name" class="inquiry-input" placeholder="Enter your full name" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="inquiry-form-group">
+                        <label class="inquiry-label">Mobile Number *</label>
+                        <input type="text" name="mobile" class="inquiry-input" placeholder="Mobile Number" required>
+                    </div>
+
+                    <div class="inquiry-form-group">
+                        <label class="inquiry-label">Email Address</label>
+                        <input type="email" name="email" class="inquiry-input" placeholder="Email (Optional)">
+                    </div>
+                </div>
+
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Inquiry Subject *</label>
+                    <input type="text" name="subject" class="inquiry-input" placeholder="e.g. Admission Inquiry, Fee Structure" required>
+                </div>
+
+                <div class="inquiry-form-group">
+                    <label class="inquiry-label">Your Message *</label>
+                    <textarea name="message" class="inquiry-input" rows="4" placeholder="Describe your question or requirement..." required></textarea>
+                </div>
+
+                <button type="submit" name="inquiry_submit" class="submit-inquiry-btn">📤 Send Inquiry Now</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<!-- Live Google Maps Location Section -->
+<section style="max-width: 1200px; margin: 0 auto 4rem auto; padding: 0 2rem;">
+    <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 2.5rem; text-align: center;">
+        <h2 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 0.8rem; background: linear-gradient(135deg, #667eea 0%, #feb47b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            📍 Find Us On Google Maps
+        </h2>
+        <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.85); margin-bottom: 2rem;">
+            Explore our campus location live or open full navigation directly in Google Maps.
+        </p>
+
+        <!-- Map Embed Frame -->
+        <div style="width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 2px solid rgba(102, 126, 234, 0.4); margin-bottom: 1.8rem;">
+            <iframe 
+                src="https://maps.google.com/maps?q=mid+point+school+barahiya&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                width="100%" 
+                height="420" 
+                style="border:0; filter: contrast(1.05) saturate(1.1);" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+
+        <!-- Open Live Location Direct Button -->
+        <a href="https://maps.google.com/maps?vet=10CAAQoqAOahcKEwiAorPRm_OVAxUAAAAAHQAAAAAQCw..i&pvq=Cg0vZy8xMWtfMV81ZGI5IhYKEG1pZCBwb2ludCBzY2hvb2wQAhgD&lqi=ChBtaWQgcG9pbnQgc2Nob29sWhIiEG1pZCBwb2ludCBzY2hvb2ySAQtjYnNlX3NjaG9vbA&fvr=1&cs=0&um=1&ie=UTF-8&fb=1&gl=in&sa=X&ftid=0x39f217c54deb605b:0xd53ca1e51bc58b87" 
+           target="_blank" 
+           style="display: inline-flex; align-items: center; gap: 10px; padding: 1rem 2.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 1.1rem; transition: all 0.3s ease; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);">
+            🗺️ Open Live Navigation in Google Maps
+        </a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'about_us' %}">About Us</a>
+        <a href="{% url 'contact_us' %}">Contact Us</a>
+        <a href="{% url 'result_list' %}">Results</a>
+        <a href="{% url 'admin_login' %}">Admin</a>
+        <a href="{% url 'teacher_login' %}">Teachers</a>
+        <a href="{% url 'student_login' %}">Students</a>
+    </div>
+
+    <p style="margin-top: 1.5rem; opacity: 0.7;">
+        &copy; {{ school_info.established_year }}-2026 {{ school_info.school_name }}. All rights reserved.
+    </p>
+    <p style="margin-top: 0.5rem; opacity: 0.6;">
+        📍 {{ school_info.address }} | 📞 {{ school_info.contact_number }} | 📧 {{ school_info.email }}
+    </p>
+</footer>
+
+{% endblock %}

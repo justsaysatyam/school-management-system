@@ -703,16 +703,157 @@
         font-size: 1.2rem;
     }
 
-    .no-gallery {
-        text-align: center;
-        padding: 3rem;
+    /* Header Navbar */
+    .header-navbar {
+        background: rgba(10, 14, 39, 0.9);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        position: sticky;
+        top: 0;
+        z-index: 1001;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.8rem 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
         color: white;
+    }
+
+    .nav-logo-img {
+        height: 44px;
+        width: 44px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #667eea;
+    }
+
+    .nav-title {
         font-size: 1.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff 0%, #feb47b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .nav-menu {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        list-style: none;
+    }
+
+    .nav-item a {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.5rem 0.9rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-item a:hover, .nav-item.active a {
+        color: #ffffff;
+        background: rgba(102, 126, 234, 0.25);
+        border: 1px solid rgba(102, 126, 234, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .user-icon-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .portal-dropdown {
+        position: relative;
+    }
+
+    .portal-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 120%;
+        background: #131b3e;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 0.8rem;
+        width: 210px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        z-index: 1002;
+    }
+
+    .portal-dropdown:hover .portal-menu {
+        display: block;
+    }
+
+    .portal-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.7rem 1rem;
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+    .portal-menu-item:hover {
+        background: rgba(255, 255, 255, 0.1);
     }
 </style>
 {% endblock %}
 
 {% block body %}
+
+<!-- Sticky Navigation Header -->
+<header class="header-navbar">
+    <div class="nav-container">
+        <a href="{% url 'home' %}" class="nav-brand">
+            {% if school_info.logo %}
+                <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" class="nav-logo-img">
+            {% else %}
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="nav-logo-img">
+            {% endif %}
+            <span class="nav-title">{{ school_info.school_name }}</span>
+        </a>
+
+        <ul class="nav-menu">
+            <li class="nav-item active"><a href="{% url 'home' %}">🏠 Home</a></li>
+            <li class="nav-item"><a href="{% url 'about_us' %}">🏫 About Us</a></li>
+            <li class="nav-item"><a href="{% url 'contact_us' %}">📞 Contact Us</a></li>
+            <li class="nav-item"><a href="{% url 'result_list' %}">📊 Results</a></li>
+            
+            <li class="nav-item portal-dropdown">
+                <a href="#" class="user-icon-btn">👤 User Login ▾</a>
+                <div class="portal-menu">
+                    <a href="{% url 'admin_login' %}" class="portal-menu-item">👨‍💼 Admin Portal</a>
+                    <a href="{% url 'teacher_login' %}" class="portal-menu-item">👨‍🏫 Teacher Portal</a>
+                    <a href="{% url 'student_login' %}" class="portal-menu-item">🎓 Student Portal</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</header>
 
 <!-- Admission Marquee -->
 <div class="admission-marquee">
@@ -918,13 +1059,14 @@
         </form>
     </div>
 </section>
-Joseph
 
 <!-- Footer -->
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-links">
             <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'about_us' %}">About Us</a>
+            <a href="{% url 'contact_us' %}">Contact Us</a>
             <a href="{% url 'result_list' %}">Results</a>
             <a href="{% url 'admin_login' %}">Admin</a>
             <a href="{% url 'teacher_login' %}">Teachers</a>
