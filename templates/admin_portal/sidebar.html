@@ -1,115 +1,120 @@
 {% load static %}
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-header-row">
+            <div class="flex items-center gap-2">
+                <div class="brand-icon">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+                </div>
+                <div>
+                    <h2>Mid Point School</h2>
+                    <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
+                </div>
             </div>
-            <div>
-                <h2>Mid Point School</h2>
-                <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
-            </div>
+            <button class="sidebar-close-btn mobile-sidebar-toggle" aria-label="Close Sidebar">&times;</button>
         </div>
+    </div>
 
-        <nav>
-            <ul class="sidebar-nav">
-                <li class="nav-item">
-                    <a href="{% url 'admin_dashboard' %}" class="nav-link active">
-                        <span class="icon">📊</span> Dashboard
-                    </a>
-                </li>
+    <nav>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+            </li>
 
-                <span class="nav-section-title">Management</span>
-                <li class="nav-item">
-                    <a href="{% url 'student_list' %}" class="nav-link">
-                        <span class="icon">🎓</span> Students
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'teacher_list' %}" class="nav-link">
-                        <span class="icon">👨‍🏫</span> Teachers
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'class_list' %}" class="nav-link">
-                        <span class="icon">🏛️</span> Classes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'subject_list' %}" class="nav-link">
-                        <span class="icon">📚</span> Subjects
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'exam_term_list' %}" class="nav-link">
-                        <span class="icon">📅</span> Exam Terms
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'admin_admit_card_list' %}" class="nav-link">
-                        <span class="icon">🎫</span> Admit Cards
-                    </a>
-                </li>
+            <span class="nav-section-title">Management</span>
+            <li class="nav-item">
+                <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name and 'attendance' not in request.resolver_match.url_name and 'result' not in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🎓</span> Students
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'teacher_list' %}" class="nav-link {% if 'teacher' in request.resolver_match.url_name and 'attendance' not in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">👨‍🏫</span> Teachers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'class_list' %}" class="nav-link {% if 'class_' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🏛️</span> Classes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'subject_list' %}" class="nav-link {% if 'subject_' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📚</span> Subjects
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'exam_term_list' %}" class="nav-link {% if 'exam_term' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📅</span> Exam Terms
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin_admit_card_list' %}" class="nav-link {% if 'admit_card' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🎫</span> Admit Cards
+                </a>
+            </li>
 
-                <span class="nav-section-title">Attendance</span>
-                <li class="nav-item">
-                    <a href="{% url 'teacher_attendance_list' %}" class="nav-link">
-                        <span class="icon">📋</span> Teacher Attendance
-                    </a>
-                </li>
+            <span class="nav-section-title">Attendance</span>
+            <li class="nav-item">
+                <a href="{% url 'teacher_attendance_list' %}" class="nav-link {% if 'teacher_attendance' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📋</span> Teacher Attendance
+                </a>
+            </li>
 
-                <span class="nav-section-title">Finance</span>
-                <li class="nav-item">
-                    <a href="{% url 'fee_collection' %}" class="nav-link">
-                        <span class="icon">💰</span> Fee Collection
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'salary_management' %}" class="nav-link">
-                        <span class="icon">💵</span> Salary Payments
-                    </a>
-                </li>
+            <span class="nav-section-title">Finance</span>
+            <li class="nav-item">
+                <a href="{% url 'fee_collection' %}" class="nav-link {% if 'fee' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">💰</span> Fee Collection
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'salary_management' %}" class="nav-link {% if 'salary' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">💵</span> Salary Payments
+                </a>
+            </li>
 
-                <span class="nav-section-title">Support</span>
-                <li class="nav-item">
-                    <a href="{% url 'admin_complaint_list' %}" class="nav-link">
-                        <span class="icon">📥</span> Complaints
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'admin_inquiry_list' %}" class="nav-link">
-                        <span class="icon">❓</span> Inquiries
-                    </a>
-                </li>
+            <span class="nav-section-title">Support</span>
+            <li class="nav-item">
+                <a href="{% url 'admin_complaint_list' %}" class="nav-link {% if 'complaint' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📥</span> Complaints
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin_inquiry_list' %}" class="nav-link {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">❓</span> Inquiries
+                </a>
+            </li>
 
-                <span class="nav-section-title">Results & Gallery</span>
-                <li class="nav-item">
-                    <a href="{% url 'result_verify' %}" class="nav-link">
-                        <span class="icon">✅</span> Verify Results
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'result_list' %}" class="nav-link">
-                        <span class="icon">📊</span> View Results
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'gallery_list' %}" class="nav-link">
-                        <span class="icon">🖼️</span> Gallery
-                    </a>
-                </li>
+            <span class="nav-section-title">Results & Gallery</span>
+            <li class="nav-item">
+                <a href="{% url 'result_verify' %}" class="nav-link {% if 'result_verify' in request.resolver_match.url_name or 'student_results_manage' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">✅</span> Verify Results
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'result_list' %}" class="nav-link {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+                    <span class="icon">📊</span> View Results
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'gallery_list' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🖼️</span> Gallery
+                </a>
+            </li>
 
-                <span class="nav-section-title">Communication</span>
-                <li class="nav-item">
-                    <a href="{% url 'notice_list' %}" class="nav-link">
-                        <span class="icon">📢</span> Notices
-                    </a>
-                </li>
+            <span class="nav-section-title">Communication</span>
+            <li class="nav-item">
+                <a href="{% url 'notice_list' %}" class="nav-link {% if 'notice' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">📢</span> Notices
+                </a>
+            </li>
 
-                <li class="nav-item" style="margin-top: 2rem;">
-                    <a href="{% url 'logout' %}" class="nav-link">
-                        <span class="icon">🚪</span> Logout
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+            <li class="nav-item" style="margin-top: 2rem;">
+                <a href="{% url 'logout' %}" class="nav-link">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>

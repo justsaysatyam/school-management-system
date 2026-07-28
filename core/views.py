@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.http import HttpResponse, Http404
 from django.apps import apps
@@ -1242,34 +1243,279 @@ def result_edit(request, pk):
     return redirect('result_submit')
 
 
+# ===================== RESULT VERIFICATION & BULK MANAGEMENT =====================
+
 def result_verify(request):
-    """Admin view to verify submitted results"""
+    """Admin view to verify submitted results grouped by student with filtering and bulk actions"""
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
-    admin_id = request.session.get('admin_id')
+    class_id = request.GET.get('class_id', '')
+    exam_term = request.GET.get('exam_term', '')
+    status_filter = request.GET.get('status', 'Pending')
     
-    # Get pending results
-    pending_results = Result.objects.filter(verification_status='Pending').select_related(
-        'student', 'subject', 'submitted_by', 'student__student_class'
+    # Base queryset
+    results = Result.objects.select_related(
+        'student', 'student__student_class', 'subject', 'submitted_by', 'verified_by'
     ).order_by('-submission_date')
     
-    # Get recently verified/rejected results
-    recent_results = Result.objects.filter(
-        verification_status__in=['Verified', 'Rejected']
-    ).select_related(
-        'student', 'subject', 'submitted_by', 'verified_by'
-    ).order_by('-verification_date')[:20]
-    
+    if class_id:
+        results = results.filter(student__student_class_id=class_id)
+    if exam_term:
+        results = results.filter(exam_name=exam_term)
+    if status_filter and status_filter != 'All':
+        results = results.filter(verification_status=status_filter)
+        
+    # Group results by (student, exam_name)
+    grouped_students = {}
+    for res in results:
+        key = (res.student_id, res.exam_name)
+        if key not in grouped_students:
+            grouped_students[key] = {
+                'student': res.student,
+                'exam_name': res.exam_name,
+                'results': [],
+                'total_obtained': 0,
+                'total_max': 0,
+                'pending_count': 0,
+                'verified_count': 0,
+                'rejected_count': 0,
+            }
+        group = grouped_students[key]
+        group['results'].append(res)
+        group['total_obtained'] += float(res.marks_obtained or 0)
+        group['total_max'] += float(res.total_marks or 0)
+        if res.verification_status == 'Pending':
+            group['pending_count'] += 1
+        elif res.verification_status == 'Verified':
+            group['verified_count'] += 1
+        elif res.verification_status == 'Rejected':
+            group['rejected_count'] += 1
+
+    # Calculate percentage, grade, and overall status for each student group
+    grouped_list = []
+    for key, group in grouped_students.items():
+        total_subj = len(group['results'])
+        pct = (group['total_obtained'] / group['total_max'] * 100) if group['total_max'] > 0 else 0
+        
+        if pct >= 90: grade = 'A+'
+        elif pct >= 80: grade = 'A'
+        elif pct >= 70: grade = 'B+'
+        elif pct >= 60: grade = 'B'
+        elif pct >= 50: grade = 'C'
+        elif pct >= 40: grade = 'D'
+        else: grade = 'F'
+        
+        if group['pending_count'] > 0:
+            status_label = 'Pending'
+        elif group['rejected_count'] > 0 and group['verified_count'] == 0:
+            status_label = 'Rejected'
+        elif group['verified_count'] > 0 and group['pending_count'] == 0 and group['rejected_count'] == 0:
+            status_label = 'Verified'
+        else:
+            status_label = 'Partial'
+            
+        group['subject_count'] = total_subj
+        group['percentage'] = pct
+        group['grade'] = grade
+        group['status_label'] = status_label
+        grouped_list.append(group)
+
+    classes = SchoolClass.objects.all().order_by('class_name', 'section')
+    exam_terms = ExamTerm.objects.filter(is_active=True).order_by('name')
+
     context = {
-        'pending_results': pending_results,
-        'recent_results': recent_results,
+        'grouped_students': grouped_list,
+        'classes': classes,
+        'exam_terms': exam_terms,
+        'selected_class': class_id,
+        'selected_exam_term': exam_term,
+        'selected_status': status_filter,
+        'total_results_count': results.count(),
+        'total_students_count': len(grouped_list),
     }
     return render(request, 'admin_portal/result_verify.html', context)
 
 
+def result_verify_student_all(request):
+    """Admin verify or reject all subject results for a specific student and exam term"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        exam_name = request.POST.get('exam_name')
+        action = request.POST.get('action', 'approve') # approve or reject
+        remarks = request.POST.get('remarks', '')
+        
+        admin_id = request.session.get('admin_id')
+        admin = get_object_or_404(Admin, pk=admin_id)
+        student = get_object_or_404(Student, pk=student_id)
+
+        target_status = 'Verified' if action == 'approve' else 'Rejected'
+        updated_count = Result.objects.filter(
+            student=student,
+            exam_name=exam_name
+        ).update(
+            verification_status=target_status,
+            verified_by=admin,
+            verification_date=timezone.now(),
+            verification_remarks=remarks
+        )
+
+        if action == 'approve':
+            messages.success(request, f'Verified all {updated_count} subject results for {student.name} ({exam_name})')
+        else:
+            messages.warning(request, f'Rejected all {updated_count} subject results for {student.name} ({exam_name})')
+
+    # Preserve current GET params on redirect
+    redirect_url = request.META.get('HTTP_REFERER') or reverse('result_verify')
+    return redirect(redirect_url)
+
+
+def result_verify_bulk(request):
+    """Admin bulk verify or reject all results matching class / exam term filter"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id')
+        exam_name = request.POST.get('exam_name')
+        status_filter = request.POST.get('status_filter', 'Pending')
+        action = request.POST.get('action', 'approve')
+        
+        admin_id = request.session.get('admin_id')
+        admin = get_object_or_404(Admin, pk=admin_id)
+        
+        queryset = Result.objects.all()
+        if class_id:
+            queryset = queryset.filter(student__student_class_id=class_id)
+        if exam_name:
+            queryset = queryset.filter(exam_name=exam_name)
+        if status_filter and status_filter != 'All':
+            queryset = queryset.filter(verification_status=status_filter)
+
+        target_status = 'Verified' if action == 'approve' else 'Rejected'
+        updated_count = queryset.update(
+            verification_status=target_status,
+            verified_by=admin,
+            verification_date=timezone.now()
+        )
+
+        class_name = SchoolClass.objects.filter(pk=class_id).first()
+        class_str = f"Class {class_name}" if class_name else "All Classes"
+        exam_str = f" ({exam_name})" if exam_name else ""
+        
+        messages.success(request, f'Bulk Operation Complete: {updated_count} results updated to "{target_status}" for {class_str}{exam_str}')
+
+    redirect_url = request.META.get('HTTP_REFERER') or reverse('result_verify')
+    return redirect(redirect_url)
+
+
+def admin_student_results_manage(request, student_id):
+    """Admin view to view, edit marks, add, delete, or re-verify all subject results of a student"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+
+    student = get_object_or_404(Student, pk=student_id)
+    exam_filter = request.GET.get('exam', '')
+    
+    results = Result.objects.filter(student=student).select_related('subject', 'submitted_by', 'verified_by')
+    if exam_filter:
+        results = results.filter(exam_name=exam_filter)
+    results = results.order_by('exam_name', 'subject__subject_name')
+
+    if request.method == 'POST':
+        action = request.POST.get('form_action')
+        admin_id = request.session.get('admin_id')
+        admin = get_object_or_404(Admin, pk=admin_id)
+
+        if action == 'update_marks':
+            # Batch update marks and status for all results on page
+            updated_count = 0
+            for res in results:
+                marks_key = f"marks_{res.id}"
+                total_key = f"total_{res.id}"
+                status_key = f"status_{res.id}"
+                remarks_key = f"remarks_{res.id}"
+
+                if marks_key in request.POST:
+                    try:
+                        m_obt = Decimal(str(request.POST.get(marks_key, res.marks_obtained)))
+                        m_tot = Decimal(str(request.POST.get(total_key, res.total_marks)))
+                        new_status = request.POST.get(status_key, res.verification_status)
+                        new_remarks = request.POST.get(remarks_key, res.verification_remarks)
+
+                        res.marks_obtained = m_obt
+                        res.total_marks = m_tot
+                        res.verification_status = new_status
+                        res.verification_remarks = new_remarks
+                        res.verified_by = admin
+                        res.verification_date = timezone.now()
+                        res.save()
+                        updated_count += 1
+                    except Exception:
+                        pass
+
+            messages.success(request, f'Successfully updated results and marks for {student.name}')
+            return redirect('admin_student_results_manage', student_id=student.id)
+
+        elif action == 'add_subject_result':
+            # Add a single new subject result for this student
+            subject_id = request.POST.get('new_subject_id')
+            exam_name = request.POST.get('new_exam_name')
+            marks_obt = request.POST.get('new_marks_obtained')
+            total_marks = request.POST.get('new_total_marks', 100)
+            status = request.POST.get('new_status', 'Verified')
+
+            if subject_id and exam_name and marks_obt:
+                try:
+                    subject = get_object_or_404(Subject, pk=subject_id)
+                    d_marks_obt = Decimal(str(marks_obt))
+                    d_total_marks = Decimal(str(total_marks))
+
+                    Result.objects.create(
+                        student=student,
+                        subject=subject,
+                        exam_name=exam_name,
+                        marks_obtained=d_marks_obt,
+                        total_marks=d_total_marks,
+                        verification_status=status,
+                        verified_by=admin,
+                        verification_date=timezone.now(),
+                        exam_date=timezone.now().date()
+                    )
+                    messages.success(request, f'Added {subject.subject_name} result for {student.name}')
+                except Exception as e:
+                    messages.error(request, f'Error adding subject result: {str(e)}')
+            else:
+                messages.error(request, 'Please fill in all required fields to add subject result')
+
+            return redirect('admin_student_results_manage', student_id=student.id)
+
+        elif action == 'delete_result':
+            result_id = request.POST.get('result_id')
+            if result_id:
+                res = get_object_or_404(Result, pk=result_id, student=student)
+                res.delete()
+                messages.success(request, 'Subject result deleted successfully')
+            return redirect('admin_student_results_manage', student_id=student.id)
+
+    subjects = Subject.objects.all().order_by('subject_name')
+    exam_terms = ExamTerm.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'student': student,
+        'results': results,
+        'subjects': subjects,
+        'exam_terms': exam_terms,
+        'selected_exam': exam_filter,
+    }
+    return render(request, 'admin_portal/student_result_manage.html', context)
+
+
 def result_approve(request, pk):
-    """Admin approve a result"""
+    """Admin approve a single result"""
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
@@ -1283,12 +1529,13 @@ def result_approve(request, pk):
     result.verification_remarks = request.POST.get('remarks', '')
     result.save()
     
-    messages.success(request, f'Result for {result.student.name} - {result.exam_name} approved')
-    return redirect('result_verify')
+    messages.success(request, f'Result for {result.student.name} - {result.subject.subject_name} approved')
+    redirect_url = request.META.get('HTTP_REFERER') or reverse('result_verify')
+    return redirect(redirect_url)
 
 
 def result_reject(request, pk):
-    """Admin reject a result"""
+    """Admin reject a single result"""
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
@@ -1302,8 +1549,9 @@ def result_reject(request, pk):
     result.verification_remarks = request.POST.get('remarks', 'Rejected by admin')
     result.save()
     
-    messages.warning(request, f'Result for {result.student.name} - {result.exam_name} rejected')
-    return redirect('result_verify')
+    messages.warning(request, f'Result for {result.student.name} - {result.subject.subject_name} rejected')
+    redirect_url = request.META.get('HTTP_REFERER') or reverse('result_verify')
+    return redirect(redirect_url)
 
 
 def result_delete(request, pk):

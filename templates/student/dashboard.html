@@ -30,7 +30,10 @@
 
     <main class="main-content">
         <div class="top-header">
-            <h1 class="page-title">Welcome, {{ student.name }}! 👋</h1>
+            <div class="top-header-left">
+                <button class="mobile-sidebar-toggle" aria-label="Toggle Navigation">☰</button>
+                <h1 class="page-title">Welcome, {{ student.name }}! 👋</h1>
+            </div>
             <div class="user-profile">
                 <div class="user-avatar" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">{{
                     student.name|slice:":1"|upper }}</div>

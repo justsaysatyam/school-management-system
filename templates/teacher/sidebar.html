@@ -1,11 +1,16 @@
 {% load static %}
 <aside class="sidebar" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);">
     <div class="sidebar-brand">
-        <div class="brand-icon">
-            <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
-        </div>
-        <div>
-            <h2>Teacher Portal</h2><small style="opacity: 0.7;">{{ teacher.name }}</small>
+        <div class="sidebar-header-row">
+            <div class="flex items-center gap-2">
+                <div class="brand-icon">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+                </div>
+                <div>
+                    <h2>Teacher Portal</h2><small style="opacity: 0.7;">{{ teacher.name }}</small>
+                </div>
+            </div>
+            <button class="sidebar-close-btn mobile-sidebar-toggle" aria-label="Close Sidebar">&times;</button>
         </div>
     </div>
     <nav>

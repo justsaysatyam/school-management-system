@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Results - {{ student.name }}{% endblock %}
+
+{% block body %}
+<style>
+    body {
+        background: #f8fafc;
+        font-family: 'Inter', sans-serif;
+        color: #1e293b;
+    }
+
+    .manage-container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .student-header-card {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .student-info h1 {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.35rem;
+    }
+
+    .student-meta {
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .meta-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .action-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .card-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-title-row h2 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .marks-edit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .marks-edit-table th {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 0.875rem 1rem;
+        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .marks-edit-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .marks-edit-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .input-number {
+        width: 110px;
+        padding: 0.6rem 0.75rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #0f172a;
+        transition: all 0.2s;
+    }
+
+    .input-number:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .select-status {
+        padding: 0.6rem 0.85rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .select-status.Verified {
+        background: #ecfdf5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+
+    .select-status.Pending {
+        background: #fffbeb;
+        color: #b45309;
+        border-color: #fde68a;
+    }
+
+    .select-status.Rejected {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fca5a5;
+    }
+
+    .btn-save-main {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: white;
+        padding: 0.85rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        transition: all 0.2s;
+    }
+
+    .btn-save-main:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-add-subject {
+        background: #2563eb;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .add-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+</style>
+
+<div class="manage-container">
+    <!-- Header Banner -->
+    <div class="student-header-card">
+        <div class="student-info">
+            <h1>🎓 {{ student.name }}</h1>
+            <div class="student-meta">
+                <span class="meta-badge">Class: {{ student.student_class }}</span>
+                <span class="meta-badge">Roll No: {{ student.roll_number }}</span>
+                <span class="meta-badge">Father: {{ student.father_name }}</span>
+                <span class="meta-badge">Phone: {{ student.mobile_number }}</span>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'result_verify' %}" class="back-btn">← Back to Verify Panel</a>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Filter by Exam Term -->
+    <div class="action-card" style="padding: 1rem 1.75rem;">
+        <form method="GET" class="flex items-center gap-2" style="flex-wrap: wrap;">
+            <strong>Filter Exam Term:</strong>
+            <select name="exam" class="form-input" style="max-width: 250px;" onchange="this.form.submit()">
+                <option value="">All Exam Terms</option>
+                {% for term in exam_terms %}
+                <option value="{{ term.name }}" {% if selected_exam == term.name %}selected{% endif %}>{{ term.name }}</option>
+                {% endfor %}
+            </select>
+            {% if selected_exam %}
+            <a href="{% url 'admin_student_results_manage' student.id %}" class="btn btn-sm btn-outline">Clear Filter</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Edit Existing Subject Marks Table -->
+    <div class="action-card">
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="update_marks">
+
+            <div class="card-title-row">
+                <h2>📝 Subject Marks & Verification Control</h2>
+                {% if results %}
+                <button type="submit" class="btn-save-main">💾 Save All Changes & Update Status</button>
+                {% endif %}
+            </div>
+
+            {% if results %}
+            <div class="table-responsive">
+                <table class="marks-edit-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Exam Term</th>
+                            <th>Marks Obtained</th>
+                            <th>Total Marks</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Verification Status</th>
+                            <th>Teacher Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in results %}
+                        <tr>
+                            <td><strong>{{ res.subject.subject_name }}</strong></td>
+                            <td><span class="badge badge-info">{{ res.exam_name }}</span></td>
+                            <td>
+                                <input type="number" step="0.01" min="0" max="{{ res.total_marks }}" name="marks_{{ res.id }}" value="{{ res.marks_obtained }}" class="input-number" required>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" min="1" name="total_{{ res.id }}" value="{{ res.total_marks }}" class="input-number" required>
+                            </td>
+                            <td><strong>{{ res.percentage|floatformat:1 }}%</strong></td>
+                            <td>
+                                <span class="grade-badge grade-{{ res.grade|lower|cut:'+' }}">
+                                    {{ res.grade }}
+                                </span>
+                            </td>
+                            <td>
+                                <select name="status_{{ res.id }}" class="select-status {{ res.verification_status }}">
+                                    <option value="Verified" {% if res.verification_status == 'Verified' %}selected{% endif %}>✅ Verified</option>
+                                    <option value="Pending" {% if res.verification_status == 'Pending' %}selected{% endif %}>⏳ Pending</option>
+                                    <option value="Rejected" {% if res.verification_status == 'Rejected' %}selected{% endif %}>❌ Rejected</option>
+                                </select>
+                            </td>
+                            <td><small style="color: var(--gray-500);">{{ res.submitted_by.name|default:"Admin" }}</small></td>
+                            <td>
+                                <button type="submit" form="delete-form-{{ res.id }}" class="btn btn-sm btn-danger" title="Delete this subject result">🗑️</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 text-right">
+                <button type="submit" class="btn-save-main">💾 Save All Changes & Update Status</button>
+            </div>
+            {% else %}
+            <div class="text-center p-4 text-muted">
+                <p>No results found for this student {% if selected_exam %}in "{{ selected_exam }}"{% endif %}.</p>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Forms for individual result delete action -->
+    {% for res in results %}
+    <form id="delete-form-{{ res.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete {{ res.subject.subject_name }} result?');">
+        {% csrf_token %}
+        <input type="hidden" name="form_action" value="delete_result">
+        <input type="hidden" name="result_id" value="{{ res.id }}">
+    </form>
+    {% endfor %}
+
+</div>
+{% endblock %}

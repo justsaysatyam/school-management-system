@@ -1,312 +1,221 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Verify Results{% endblock %}
+{% block title %}Verify & Manage Results - Admin Portal{% endblock %}
 
 {% block body %}
-<style>
-    body {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        min-height: 100vh;
-        font-family: 'Inter', sans-serif;
-    }
+<div class="dashboard-layout">
+    <!-- Include Admin Sidebar -->
+    {% include 'admin_portal/sidebar.html' %}
 
-    .page-container {
-        max-width: 1600px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-
-    .page-header {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    .page-header h1 {
-        color: #f5576c;
-        margin: 0;
-    }
-
-    .section {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    .section h2 {
-        margin-top: 0;
-        color: #f5576c;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    td {
-        padding: 1rem;
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-    tr:hover {
-        background: #f5f5f5;
-    }
-
-    .btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        text-decoration: none;
-        display: inline-block;
-        margin-right: 0.5rem;
-    }
-
-    .btn-approve {
-        background: #10b981;
-        color: white;
-    }
-
-    .btn-reject {
-        background: #ef4444;
-        color: white;
-    }
-
-    .btn-delete {
-        background: #6b7280;
-        color: white;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .grade-badge {
-        display: inline-block;
-        padding: 0.3rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .grade-a-plus {
-        background: #10b981;
-        color: white;
-    }
-
-    .grade-a {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .grade-b-plus {
-        background: #8b5cf6;
-        color: white;
-    }
-
-    .grade-b {
-        background: #f59e0b;
-        color: white;
-    }
-
-    .grade-c,
-    .grade-d,
-    .grade-f {
-        background: #ef4444;
-        color: white;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 0.3rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .status-verified {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .back-link {
-        display: inline-block;
-        margin-bottom: 1rem;
-        color: white;
-        text-decoration: none;
-        padding: 0.5rem 1rem;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        transition: all 0.3s;
-    }
-
-    .back-link:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-
-    .no-results {
-        text-align: center;
-        padding: 3rem;
-        color: #666;
-    }
-</style>
-
-<div class="page-container">
-    <a href="{% url 'admin_dashboard' %}" class="back-link">← Back to Dashboard</a>
-
-    <div class="page-header">
-        <h1>Verify Student Results</h1>
-        <p style="margin: 0.5rem 0 0 0; color: #666;">Review and approve results submitted by teachers</p>
-    </div>
-
-    {% if messages %}
-    {% for message in messages %}
-    <div
-        style="background: {% if message.tags == 'success' %}#d1fae5{% elif message.tags == 'error' %}#fee2e2{% else %}#fef3c7{% endif %}; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
-        {{ message }}
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    <!-- Pending Results Section -->
-    <div class="section">
-        <h2>⏳ Pending Verification ({{ pending_results.count }})</h2>
-        {% if pending_results %}
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Class</th>
-                        <th>Exam</th>
-                        <th>Subject</th>
-                        <th>Marks</th>
-                        <th>Percentage</th>
-                        <th>Grade</th>
-                        <th>Submitted By</th>
-                        <th>Submission Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for result in pending_results %}
-                    <tr>
-                        <td><strong>{{ result.student.name }}</strong></td>
-                        <td>{{ result.student.student_class }}</td>
-                        <td>{{ result.exam_name }}</td>
-                        <td>{{ result.subject.subject_name }}</td>
-                        <td>{{ result.marks_obtained }} / {{ result.total_marks }}</td>
-                        <td>{{ result.percentage|floatformat:2 }}%</td>
-                        <td>
-                            <span class="grade-badge grade-{{ result.grade|lower|cut:'+' }}">
-                                {{ result.grade }}
-                            </span>
-                        </td>
-                        <td>{{ result.submitted_by.name }}</td>
-                        <td>{{ result.submission_date|date:"M d, Y" }}</td>
-                        <td>
-                            <form method="POST" action="{% url 'result_approve' result.id %}" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-approve">✓ Approve</button>
-                            </form>
-                            <form method="POST" action="{% url 'result_reject' result.id %}" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-reject">✗ Reject</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <main class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <div class="top-header-left">
+                <button class="mobile-sidebar-toggle" aria-label="Toggle Navigation">☰</button>
+                <h1 class="page-title">Verify & Manage Results</h1>
+            </div>
+            <div class="header-actions">
+                <div class="user-profile">
+                    <div class="user-avatar">{{ request.session.user_name|slice:":1"|upper }}</div>
+                    <div>
+                        <strong>{{ request.session.user_name }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">Administrator</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="no-results">
-            <p>No pending results to verify.</p>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+            {{ message }}
         </div>
+        {% endfor %}
         {% endif %}
-    </div>
 
-    <!-- Recent Actions Section -->
-    <div class="section">
-        <h2>📋 Recent Verification History</h2>
-        {% if recent_results %}
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Class</th>
-                        <th>Exam</th>
-                        <th>Subject</th>
-                        <th>Marks</th>
-                        <th>Grade</th>
-                        <th>Status</th>
-                        <th>Submitted By</th>
-                        <th>Verified By</th>
-                        <th>Verification Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for result in recent_results %}
-                    <tr>
-                        <td><strong>{{ result.student.name }}</strong></td>
-                        <td>{{ result.student.student_class }}</td>
-                        <td>{{ result.exam_name }}</td>
-                        <td>{{ result.subject.subject_name }}</td>
-                        <td>{{ result.marks_obtained }} / {{ result.total_marks }}</td>
-                        <td>
-                            <span class="grade-badge grade-{{ result.grade|lower|cut:'+' }}">
-                                {{ result.grade }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ result.verification_status|lower }}">
-                                {{ result.verification_status }}
-                            </span>
-                        </td>
-                        <td>{{ result.submitted_by.name }}</td>
-                        <td>{{ result.verified_by.name|default:"—" }}</td>
-                        <td>{{ result.verification_date|date:"M d, Y"|default:"—" }}</td>
-                        <td>
-                            <form method="POST" action="{% url 'result_delete' result.id %}" style="display: inline;"
-                                onsubmit="return confirm('Are you sure you want to delete this result?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-delete">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Filter & Bulk Actions Bar -->
+        <div class="card mb-4">
+            <div class="card-header" style="margin-bottom: 1rem;">
+                <h3 class="card-title">🔍 Filter Results & Bulk Class Operations</h3>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <form method="GET" class="flex gap-2 items-center" style="flex-wrap: wrap;">
+                    <div style="min-width: 180px;">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Select Class</label>
+                        <select name="class_id" class="form-input">
+                            <option value="">All Classes</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}" {% if selected_class == c.id|stringformat:"i" %}selected{% endif %}>Class {{ c.class_name }} - {{ c.section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="min-width: 180px;">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Exam Term</label>
+                        <select name="exam_term" class="form-input">
+                            <option value="">All Exam Terms</option>
+                            {% for term in exam_terms %}
+                            <option value="{{ term.name }}" {% if selected_exam_term == term.name %}selected{% endif %}>{{ term.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="min-width: 160px;">
+                        <label class="form-label" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Status</label>
+                        <select name="status" class="form-input">
+                            <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>⏳ Pending Verification</option>
+                            <option value="Verified" {% if selected_status == 'Verified' %}selected{% endif %}>✅ Verified</option>
+                            <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>❌ Rejected</option>
+                            <option value="All" {% if selected_status == 'All' %}selected{% endif %}>📋 All Results</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-top: auto; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                        {% if selected_class or selected_exam_term or selected_status != 'Pending' %}
+                        <a href="{% url 'result_verify' %}" class="btn btn-outline">Reset Filter</a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- Bulk Verification Form -->
+                <div style="padding-top: 1rem; border-top: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <span style="font-weight: 600; color: var(--gray-700);">Bulk Actions for Selected Filter:</span>
+                        <small style="color: var(--gray-500); display: block;">Approve all results for filtered class and exam term in one click.</small>
+                    </div>
+
+                    <div class="flex gap-2" style="flex-wrap: wrap;">
+                        <form method="POST" action="{% url 'result_verify_bulk' %}" onsubmit="return confirm('Are you sure you want to VERIFY ALL matching subject results for this class?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="class_id" value="{{ selected_class }}">
+                            <input type="hidden" name="exam_name" value="{{ selected_exam_term }}">
+                            <input type="hidden" name="status_filter" value="{{ selected_status }}">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success">⚡ Verify Entire Class Results</button>
+                        </form>
+
+                        <form method="POST" action="{% url 'result_verify_bulk' %}" onsubmit="return confirm('Are you sure you want to REJECT ALL matching subject results?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="class_id" value="{{ selected_class }}">
+                            <input type="hidden" name="exam_name" value="{{ selected_exam_term }}">
+                            <input type="hidden" name="status_filter" value="{{ selected_status }}">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-danger">❌ Reject Filtered Results</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="no-results">
-            <p>No verification history yet.</p>
+
+        <!-- Student Grouped Results Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    🎓 Student Results ({{ total_students_count }} Students • {{ total_results_count }} Subject Entries)
+                </h3>
+            </div>
+
+            {% if grouped_students %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Class & Roll</th>
+                            <th>Exam Term</th>
+                            <th>Subjects</th>
+                            <th>Marks & %</th>
+                            <th>Grade</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in grouped_students %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'admin_student_results_manage' group.student.id %}?exam={{ group.exam_name }}" style="color: var(--primary); font-weight: 700; text-decoration: underline;" title="Click to view and edit all marks for {{ group.student.name }}">
+                                    🎓 {{ group.student.name }}
+                                </a>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);">ID: #{{ group.student.id }}</div>
+                            </td>
+                            <td>
+                                <strong>Class {{ group.student.student_class }}</strong>
+                                <div style="font-size: 0.75rem; color: var(--gray-500);">Roll: {{ group.student.roll_number }}</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">{{ group.exam_name }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ group.subject_count }} Subject{% if group.subject_count > 1 %}s{% endif %}</strong>
+                                <div style="font-size: 0.75rem;">
+                                    {% if group.pending_count > 0 %}
+                                    <span style="color: var(--warning); font-weight: 600;">⏳ {{ group.pending_count }} Pending</span>
+                                    {% endif %}
+                                    {% if group.verified_count > 0 %}
+                                    <span style="color: var(--success); font-weight: 600;">✅ {{ group.verified_count }} Verified</span>
+                                    {% endif %}
+                                    {% if group.rejected_count > 0 %}
+                                    <span style="color: var(--danger); font-weight: 600;">❌ {{ group.rejected_count }} Rejected</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ group.total_obtained|floatformat:0 }} / {{ group.total_max|floatformat:0 }}</strong>
+                                <div style="font-size: 0.8rem; color: var(--gray-600);">{{ group.percentage|floatformat:1 }}%</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-primary">{{ group.grade }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{% if group.status_label == 'Verified' %}success{% elif group.status_label == 'Pending' %}warning{% elif group.status_label == 'Rejected' %}danger{% else %}info{% endif %}">
+                                    {{ group.status_label }}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="flex gap-1 justify-between" style="justify-content: flex-end; flex-wrap: wrap;">
+                                    <!-- One-Click Verify All Subjects for this Student -->
+                                    <form method="POST" action="{% url 'result_verify_student_all' %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="student_id" value="{{ group.student.id }}">
+                                        <input type="hidden" name="exam_name" value="{{ group.exam_name }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-sm btn-success" title="Verify all subjects for this student">
+                                            ✅ Verify All
+                                        </button>
+                                    </form>
+
+                                    <!-- One-Click Reject All Subjects for this Student -->
+                                    <form method="POST" action="{% url 'result_verify_student_all' %}" style="display: inline;" onsubmit="return confirm('Reject all subject results for {{ group.student.name }}?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="student_id" value="{{ group.student.id }}">
+                                        <input type="hidden" name="exam_name" value="{{ group.exam_name }}">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Reject all subjects for this student">
+                                            ❌ Reject All
+                                        </button>
+                                    </form>
+
+                                    <!-- Click to Edit Marks -->
+                                    <a href="{% url 'admin_student_results_manage' group.student.id %}?exam={{ group.exam_name }}" class="btn btn-sm btn-outline" title="Edit individual marks and details">
+                                        ✏️ Edit Marks
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center p-4 text-muted">
+                <p style="font-size: 1.1rem;">No result records found matching current filters.</p>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-    </div>
+    </main>
 </div>
-
 {% endblock %}

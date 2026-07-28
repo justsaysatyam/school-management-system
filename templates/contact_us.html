@@ -383,7 +383,13 @@
             <span class="nav-title">{{ school_info.school_name }}</span>
         </a>
 
-        <ul class="nav-menu">
+        <button class="public-nav-toggle" data-target="contactNavMenu" aria-label="Toggle Navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <ul class="nav-menu" id="contactNavMenu">
             <li class="nav-item"><a href="{% url 'home' %}">🏠 Home</a></li>
             <li class="nav-item"><a href="{% url 'about_us' %}">🏫 About Us</a></li>
             <li class="nav-item active"><a href="{% url 'contact_us' %}">📞 Contact Us</a></li>

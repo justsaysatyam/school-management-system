@@ -3,32 +3,8 @@
 {% block title %}Classes - Mid Point School{% endblock %}
 {% block body %}
 <div class="dashboard-layout">
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
-            </div>
-            <div>
-                <h2>Mid Point School</h2>
-            </div>
-        </div>
-        <nav>
-            <ul class="sidebar-nav">
-                <li class="nav-item"><a href="{% url 'admin_dashboard' %}" class="nav-link"><span class="icon">📊</span>
-                        Dashboard</a></li>
-                <li class="nav-item"><a href="{% url 'student_list' %}" class="nav-link"><span class="icon">🎓</span>
-                        Students</a></li>
-                <li class="nav-item"><a href="{% url 'teacher_list' %}" class="nav-link"><span class="icon">👨‍🏫</span>
-                        Teachers</a></li>
-                <li class="nav-item"><a href="{% url 'class_list' %}" class="nav-link active"><span
-                            class="icon">🏛️</span> Classes</a></li>
-                <li class="nav-item"><a href="{% url 'subject_list' %}" class="nav-link"><span
-                            class="icon">📚</span> Subjects</a></li>
-                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span
-                            class="icon">🚪</span> Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
+    <!-- Sidebar -->
+    {% include 'admin_portal/sidebar.html' %}
     <main class="main-content">
         <div class="top-header">
             <h1 class="page-title">🏛️ Classes</h1><a href="{% url 'class_add' %}" class="btn btn-primary">➕ Add

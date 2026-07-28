@@ -408,25 +408,34 @@ class Result(models.Model):
         verbose_name_plural = "Results"
     
     def save(self, *args, **kwargs):
-        # Auto-calculate percentage
-        if self.marks_obtained and self.total_marks and self.total_marks > 0:
-            self.percentage = (self.marks_obtained / self.total_marks) * 100
-            
-            # Auto-assign grade based on percentage
-            if self.percentage >= 90:
-                self.grade = 'A+'
-            elif self.percentage >= 80:
-                self.grade = 'A'
-            elif self.percentage >= 70:
-                self.grade = 'B+'
-            elif self.percentage >= 60:
-                self.grade = 'B'
-            elif self.percentage >= 50:
-                self.grade = 'C'
-            elif self.percentage >= 40:
-                self.grade = 'D'
-            else:
-                self.grade = 'F'
+        # Auto-calculate percentage safely with Decimal conversion
+        if self.marks_obtained is not None and self.total_marks is not None:
+            try:
+                m_obt = Decimal(str(self.marks_obtained))
+                m_tot = Decimal(str(self.total_marks))
+                self.marks_obtained = m_obt
+                self.total_marks = m_tot
+                
+                if m_tot > 0:
+                    self.percentage = (m_obt / m_tot) * Decimal('100')
+                    
+                    # Auto-assign grade based on percentage
+                    if self.percentage >= 90:
+                        self.grade = 'A+'
+                    elif self.percentage >= 80:
+                        self.grade = 'A'
+                    elif self.percentage >= 70:
+                        self.grade = 'B+'
+                    elif self.percentage >= 60:
+                        self.grade = 'B'
+                    elif self.percentage >= 50:
+                        self.grade = 'C'
+                    elif self.percentage >= 40:
+                        self.grade = 'D'
+                    else:
+                        self.grade = 'F'
+            except Exception:
+                pass
         
         super().save(*args, **kwargs)
     

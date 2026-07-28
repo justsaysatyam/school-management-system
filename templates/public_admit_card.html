@@ -248,6 +248,30 @@
             color: var(--text-muted);
         }
 
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .controls .btn {
+                width: 100%;
+            }
+            .admit-card-container {
+                padding: 15px;
+                border-radius: 12px;
+            }
+            .info-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
         /* Print Styles */
         @media print {
             body {

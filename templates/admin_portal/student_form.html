@@ -6,42 +6,7 @@
 {% block body %}
 <div class="dashboard-layout">
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
-            </div>
-            <div>
-                <h2>Mid Point School</h2>
-                <small style="opacity: 0.7; font-size: 0.75rem;">Admin Dashboard</small>
-            </div>
-        </div>
-
-        <nav>
-            <ul class="sidebar-nav">
-                <li class="nav-item">
-                    <a href="{% url 'admin_dashboard' %}" class="nav-link">
-                        <span class="icon">📊</span> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'student_list' %}" class="nav-link active">
-                        <span class="icon">🎓</span> Students
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'teacher_list' %}" class="nav-link">
-                        <span class="icon">👨‍🏫</span> Teachers
-                    </a>
-                </li>
-                <li class="nav-item" style="margin-top: 2rem;">
-                    <a href="{% url 'logout' %}" class="nav-link">
-                        <span class="icon">🚪</span> Logout
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+    {% include 'admin_portal/sidebar.html' %}
 
     <!-- Main Content -->
     <main class="main-content">
