@@ -385,8 +385,8 @@ class Result(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     marks_obtained = models.DecimalField(max_digits=5, decimal_places=2)
     total_marks = models.DecimalField(max_digits=5, decimal_places=2)
-    percentage = models.DecimalField(max_digits=5, decimal_places=2, blank=True)
-    grade = models.CharField(max_length=2, choices=GRADE_CHOICES, blank=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, blank=True)
+    grade = models.CharField(max_length=2, choices=GRADE_CHOICES, default='F', blank=True)
     
     # Submission tracking
     submitted_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='submitted_results')
@@ -417,25 +417,31 @@ class Result(models.Model):
                 self.total_marks = m_tot
                 
                 if m_tot > 0:
-                    self.percentage = (m_obt / m_tot) * Decimal('100')
+                    pct = (m_obt / m_tot) * Decimal('100')
+                    self.percentage = Decimal(str(round(float(pct), 2)))
                     
                     # Auto-assign grade based on percentage
-                    if self.percentage >= 90:
+                    if self.percentage >= Decimal('90'):
                         self.grade = 'A+'
-                    elif self.percentage >= 80:
+                    elif self.percentage >= Decimal('80'):
                         self.grade = 'A'
-                    elif self.percentage >= 70:
+                    elif self.percentage >= Decimal('70'):
                         self.grade = 'B+'
-                    elif self.percentage >= 60:
+                    elif self.percentage >= Decimal('60'):
                         self.grade = 'B'
-                    elif self.percentage >= 50:
+                    elif self.percentage >= Decimal('50'):
                         self.grade = 'C'
-                    elif self.percentage >= 40:
+                    elif self.percentage >= Decimal('40'):
                         self.grade = 'D'
                     else:
                         self.grade = 'F'
             except Exception:
                 pass
+        
+        if self.percentage is None:
+            self.percentage = Decimal('0.00')
+        if not self.grade:
+            self.grade = 'F'
         
         super().save(*args, **kwargs)
     
