@@ -29,10 +29,10 @@
     </aside>
     <main class="main-content">
         <div class="top-header">
-            <h1 class="page-title">🎓 My Students {% if teacher.class_section %}- {{ teacher.class_section }}{% endif %}
+            <h1 class="page-title">&#127890; My Students {% if teacher.class_section.exists %}- {% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
             </h1>
         </div>
-        {% if teacher.class_section %}
+        {% if teacher.class_section.exists %}
         <div class="table-container">
             <table class="table">
                 <thead>

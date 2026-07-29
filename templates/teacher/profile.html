@@ -65,7 +65,7 @@
                     <p class="text-success"><strong>₹{{ teacher.monthly_salary }}</strong></p>
                 </div>
                 <div class="form-group"><label class="form-label">Class Teacher</label>
-                    <p>{{ teacher.class_section|default:"Not assigned" }}</p>
+                    <p>{% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% empty %}Not assigned{% endfor %}</p>
                 </div>
             </div>
         </div>

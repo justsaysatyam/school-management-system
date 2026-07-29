@@ -5,22 +5,19 @@
 
 {% block body %}
 <div class="dashboard-layout">
-    <!-- Sidebar -->
     {% include 'admin_portal/sidebar.html' %}
 
     <main class="main-content">
         <div class="top-header">
             <h1 class="page-title">{{ title }}</h1>
-            <a href="{% url 'teacher_list' %}" class="btn btn-outline">← Back to Teachers</a>
+            <a href="{% url 'teacher_list' %}" class="btn btn-outline">&#8592; Back to Teachers</a>
         </div>
 
         <div class="card" style="max-width: 900px;">
             {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}"
-                style="margin-bottom: 1rem;">
-                {{ message }}
-            </div>
+                style="margin-bottom: 1rem;">{{ message }}</div>
             {% endfor %}
             {% endif %}
 
@@ -28,14 +25,8 @@
             <div class="alert alert-error" style="margin-bottom: 1rem;">
                 <strong>Please fix the following errors:</strong>
                 <ul style="margin: 0.5rem 0 0 1rem;">
-                    {% for field in form %}
-                    {% for error in field.errors %}
-                    <li>{{ field.label }}: {{ error }}</li>
-                    {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
+                    {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
@@ -94,19 +85,70 @@
                         {{ form.joining_date }}
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Monthly Salary (₹)</label>
+                        <label class="form-label">Monthly Salary (&#8377;)</label>
                         {{ form.monthly_salary }}
                     </div>
                 </div>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Subjects</label>
-                        {{ form.subjects }}
+                <!-- ===== SUBJECTS MULTI-SELECT ===== -->
+                <div class="form-group">
+                    <label class="form-label">
+                        &#128218; Subjects
+                        <span class="ms-hint">Multiple select kar sakte hain</span>
+                    </label>
+                    <div class="ms-box" id="ms-subjects">
+                        <div class="ms-search-row">
+                            <input type="text" class="ms-search" placeholder="&#128269; Subject search karein..." oninput="msSearch('ms-subjects', this.value)">
+                            <button type="button" class="ms-selectall" onclick="msToggleAll('ms-subjects')">Select All</button>
+                            <button type="button" class="ms-clearall" onclick="msClearAll('ms-subjects')">Clear All</button>
+                        </div>
+                        <div class="ms-pills-area">
+                            {% for option in form.subjects %}
+                            <label class="ms-chip" id="chip-subj-{{ forloop.counter }}">
+                                <input type="checkbox" name="{{ option.data.name }}" value="{{ option.data.value }}"
+                                    {% if option.data.selected %}checked{% endif %}
+                                    onchange="msSync(this)">
+                                <span class="ms-chip-text">{{ option.choice_label }}</span>
+                                <span class="ms-chip-tick">&#10003;</span>
+                            </label>
+                            {% empty %}
+                            <span class="ms-empty">Koi subject nahi hai. Pehle subject add karein.</span>
+                            {% endfor %}
+                        </div>
+                        <div class="ms-footer">
+                            <span class="ms-counter" id="cnt-subjects">0 selected</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Class Teacher Of</label>
-                        {{ form.class_section }}
+                </div>
+
+                <!-- ===== CLASSES MULTI-SELECT ===== -->
+                <div class="form-group">
+                    <label class="form-label">
+                        &#127979; Class Teacher Of
+                        <span class="ms-hint">Multiple classes select kar sakte hain</span>
+                    </label>
+                    <div class="ms-box" id="ms-classes">
+                        <div class="ms-search-row">
+                            <input type="text" class="ms-search" placeholder="&#128269; Class search karein..." oninput="msSearch('ms-classes', this.value)">
+                            <button type="button" class="ms-selectall" onclick="msToggleAll('ms-classes')">Select All</button>
+                            <button type="button" class="ms-clearall" onclick="msClearAll('ms-classes')">Clear All</button>
+                        </div>
+                        <div class="ms-pills-area">
+                            {% for option in form.class_section %}
+                            <label class="ms-chip" id="chip-cls-{{ forloop.counter }}">
+                                <input type="checkbox" name="{{ option.data.name }}" value="{{ option.data.value }}"
+                                    {% if option.data.selected %}checked{% endif %}
+                                    onchange="msSync(this)">
+                                <span class="ms-chip-text">{{ option.choice_label }}</span>
+                                <span class="ms-chip-tick">&#10003;</span>
+                            </label>
+                            {% empty %}
+                            <span class="ms-empty">Koi class nahi hai. Pehle class add karein.</span>
+                            {% endfor %}
+                        </div>
+                        <div class="ms-footer">
+                            <span class="ms-counter" id="cnt-classes">0 selected</span>
+                        </div>
                     </div>
                 </div>
 
@@ -136,4 +178,183 @@
         </div>
     </main>
 </div>
+
+<style>
+/* ====== Multi-Select Box ====== */
+.ms-hint {
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-left: 6px;
+}
+.ms-box {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+}
+.ms-box:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+.ms-search-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .8rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.ms-search {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: .88rem;
+    color: #1e293b;
+    min-width: 0;
+}
+.ms-selectall, .ms-clearall {
+    background: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: .2rem .6rem;
+    font-size: .75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+}
+.ms-selectall { color: #6366f1; }
+.ms-selectall:hover { background: #eef2ff; border-color: #6366f1; }
+.ms-clearall { color: #ef4444; }
+.ms-clearall:hover { background: #fef2f2; border-color: #ef4444; }
+.ms-pills-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    padding: .75rem .8rem;
+    min-height: 56px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+/* ===== THE CHIP (PILL) ===== */
+.ms-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .38rem .85rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: .86rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: all .18s ease;
+    white-space: nowrap;
+}
+/* Hide the actual checkbox — we style the label */
+.ms-chip input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.ms-chip-tick {
+    display: none;
+    font-size: .72rem;
+    font-weight: bold;
+}
+.ms-chip:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #eef2ff;
+}
+/* Selected state — driven by :has(input:checked) */
+.ms-chip:has(input:checked),
+.ms-chip.ms-checked {
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    border-color: #6366f1;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(99,102,241,.28);
+}
+.ms-chip:has(input:checked) .ms-chip-tick,
+.ms-chip.ms-checked .ms-chip-tick {
+    display: inline;
+}
+.ms-chip.ms-hidden { display: none !important; }
+.ms-footer {
+    display: flex;
+    align-items: center;
+    padding: .4rem .85rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: .8rem;
+}
+.ms-counter { color: #6366f1; font-weight: 600; }
+.ms-empty { color: #94a3b8; font-size: .88rem; padding: .2rem 0; }
+</style>
+
+<script>
+(function () {
+    /* Count checked boxes in a ms-box and update counter */
+    function updateCounter(boxId) {
+        var box = document.getElementById(boxId);
+        if (!box) return;
+        var cntId = boxId === 'ms-subjects' ? 'cnt-subjects' : 'cnt-classes';
+        var n = box.querySelectorAll('input[type=checkbox]:checked').length;
+        var el = document.getElementById(cntId);
+        if (el) el.textContent = n + ' selected';
+    }
+
+    /* Sync visual class when checkbox changes (fallback for older browsers) */
+    window.msSync = function (cb) {
+        var chip = cb.closest('.ms-chip');
+        if (chip) chip.classList.toggle('ms-checked', cb.checked);
+        updateCounter(cb.closest('.ms-box') ? cb.closest('.ms-box').id : '');
+    };
+
+    /* Search filter */
+    window.msSearch = function (boxId, q) {
+        q = q.toLowerCase().trim();
+        document.getElementById(boxId).querySelectorAll('.ms-chip').forEach(function (chip) {
+            var txt = chip.querySelector('.ms-chip-text');
+            chip.classList.toggle('ms-hidden', q !== '' && !(txt && txt.textContent.toLowerCase().includes(q)));
+        });
+    };
+
+    /* Select all visible */
+    window.msToggleAll = function (boxId) {
+        document.getElementById(boxId).querySelectorAll('.ms-chip:not(.ms-hidden)').forEach(function (chip) {
+            var cb = chip.querySelector('input[type=checkbox]');
+            if (cb) { cb.checked = true; chip.classList.add('ms-checked'); }
+        });
+        updateCounter(boxId);
+    };
+
+    /* Clear all */
+    window.msClearAll = function (boxId) {
+        document.getElementById(boxId).querySelectorAll('.ms-chip').forEach(function (chip) {
+            var cb = chip.querySelector('input[type=checkbox]');
+            if (cb) { cb.checked = false; chip.classList.remove('ms-checked'); }
+        });
+        updateCounter(boxId);
+    };
+
+    /* On page load — sync visual state for pre-selected (edit mode) */
+    document.addEventListener('DOMContentLoaded', function () {
+        ['ms-subjects', 'ms-classes'].forEach(function (boxId) {
+            var box = document.getElementById(boxId);
+            if (!box) return;
+            box.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                if (cb.checked) cb.closest('.ms-chip').classList.add('ms-checked');
+            });
+            updateCounter(boxId);
+        });
+    });
+})();
+</script>
 {% endblock %}

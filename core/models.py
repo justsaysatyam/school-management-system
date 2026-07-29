@@ -61,7 +61,7 @@ class Teacher(models.Model):
     role = models.CharField(max_length=50, default='Teacher')
     joining_date = models.DateField()
     subjects = models.ManyToManyField(Subject, blank=True)
-    class_section = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL, null=True, blank=True)
+    class_section = models.ManyToManyField(SchoolClass, blank=True, related_name='class_teachers')
     password = models.CharField(max_length=128)
     monthly_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     photo = models.BinaryField(blank=True, null=True)

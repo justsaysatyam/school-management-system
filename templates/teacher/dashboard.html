@@ -136,10 +136,10 @@
             </div>
         </div>
 
-        {% if teacher.class_section %}
+        {% if teacher.class_section.exists %}
         <div class="card mt-3">
             <div class="card-header">
-                <h3 class="card-title">🎓 My Class - {{ teacher.class_section }}</h3><a
+                <h3 class="card-title">&#127890; My Classes - {% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% endfor %}</h3><a
                     href="{% url 'teacher_students' %}" class="btn btn-sm btn-outline">View All</a>
             </div>
             <div class="table-container" style="box-shadow: none;">

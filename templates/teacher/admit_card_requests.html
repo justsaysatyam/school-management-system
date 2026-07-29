@@ -8,7 +8,7 @@
     {% include 'teacher/sidebar.html' %}
     <main class="main-content">
         <div class="top-header">
-            <h1 class="page-title">Admit Card Requests ({{ teacher.class_section.class_name }} - {{ teacher.class_section.section }})</h1>
+            <h1 class="page-title">Admit Card Requests ({% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% empty %}No class assigned{% endfor %})</h1>
         </div>
 
         {% if messages %}

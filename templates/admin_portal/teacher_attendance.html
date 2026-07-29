@@ -119,9 +119,9 @@
                                 </td>
                                 <td>
                                     {{ item.teacher.role }}
-                                    {% if item.teacher.class_section %}
-                                    <span class="badge badge-info">{{ item.teacher.class_section }}</span>
-                                    {% endif %}
+                                    {% for cls in item.teacher.class_section.all %}
+                                    <span class="badge badge-info">{{ cls }}</span>
+                                    {% endfor %}
                                 </td>
                                 <td>
                                     <select name="status_{{ item.teacher.id }}" class="form-control attendance-select" 

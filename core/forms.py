@@ -64,8 +64,8 @@ class TeacherForm(forms.ModelForm):
             'qualification': forms.TextInput(attrs={'class': 'form-input'}),
             'role': forms.TextInput(attrs={'class': 'form-input'}),
             'joining_date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
-            'subjects': forms.SelectMultiple(attrs={'class': 'form-input'}),
-            'class_section': forms.Select(attrs={'class': 'form-input'}),
+            'subjects': forms.CheckboxSelectMultiple(),
+            'class_section': forms.CheckboxSelectMultiple(),
             'monthly_salary': forms.NumberInput(attrs={'class': 'form-input'}),
         }
 

@@ -52,12 +52,12 @@
         {% endfor %}
         {% endif %}
 
-        {% if teacher.class_section %}
+        {% if teacher.class_section.exists %}
         <div class="card"
             style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white;">
             <div class="flex gap-2" style="align-items: center; justify-content: space-between; flex-wrap: wrap;">
                 <div>
-                    <h3 style="margin: 0;">📚 Class: {{ teacher.class_section }}</h3>
+                    <h3 style="margin: 0;">&#128218; Classes: {% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% endfor %}</h3>
                     <small style="opacity: 0.8;">Total Students: {{ total_students }}</small>
                 </div>
                 <form method="get" class="flex gap-2" style="align-items: flex-end;">

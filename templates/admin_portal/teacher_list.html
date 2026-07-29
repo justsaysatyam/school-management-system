@@ -48,7 +48,7 @@
                         <td>{{ teacher.mobile }}</td>
                         <td>{{ teacher.qualification|default:"-" }}</td>
                         <td>₹{{ teacher.monthly_salary }}</td>
-                        <td>{{ teacher.class_section|default:"-" }}</td>
+                        <td>{% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</td>
                         <td>
                             <span class="badge badge-{% if teacher.is_active %}success{% else %}danger{% endif %}">
                                 {% if teacher.is_active %}Active{% else %}Inactive{% endif %}

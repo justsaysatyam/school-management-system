@@ -344,7 +344,7 @@ def teacher_list(request):
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
-    teachers = Teacher.objects.all().select_related('class_section')
+    teachers = Teacher.objects.all().prefetch_related('class_section', 'subjects')
     return render(request, 'admin_portal/teacher_list.html', {'teachers': teachers})
 
 
@@ -879,8 +879,8 @@ def teacher_dashboard(request):
     
     # Students in teacher's class
     students = []
-    if teacher.class_section:
-        students = Student.objects.filter(student_class=teacher.class_section, is_active=True)
+    if teacher.class_section.exists():
+        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
     
     # Active notices for teachers
     notices = Notice.objects.filter(is_active=True, audience__in=['All', 'Teachers'])[:5]
@@ -916,9 +916,8 @@ def teacher_students(request):
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     
     students = []
-    if teacher.class_section:
-        students = Student.objects.filter(student_class=teacher.class_section, is_active=True)
-    
+    if teacher.class_section.exists():
+        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
     return render(request, 'teacher/students.html', {'students': students, 'teacher': teacher})
 
 
@@ -946,7 +945,7 @@ def student_attendance_list(request):
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     
     # Check if teacher has a class assigned
-    if not teacher.class_section:
+    if not teacher.class_section.exists():
         messages.warning(request, 'You are not assigned to any class')
         return render(request, 'teacher/student_attendance.html', {
             'teacher': teacher,
@@ -964,16 +963,16 @@ def student_attendance_list(request):
     else:
         selected_date = date.today()
     
-    # Get all students in teacher's class
+    # Get all students in teacher's classes
     students = Student.objects.filter(
-        student_class=teacher.class_section, 
+        student_class__in=teacher.class_section.all(), 
         is_active=True
     ).order_by('name')
     
     # Get attendance records for the selected date
     attendance_records = StudentAttendance.objects.filter(
         date=selected_date,
-        student__student_class=teacher.class_section
+        student__student_class__in=teacher.class_section.all()
     )
     attendance_dict = {record.student_id: record for record in attendance_records}
     
@@ -1017,7 +1016,7 @@ def student_attendance_mark(request):
         teacher_id = request.session.get('teacher_id')
         teacher = get_object_or_404(Teacher, pk=teacher_id)
         
-        if not teacher.class_section:
+        if not teacher.class_section.exists():
             messages.error(request, 'You are not assigned to any class')
             return redirect('student_attendance_list')
         
@@ -1027,9 +1026,9 @@ def student_attendance_mark(request):
         except (ValueError, TypeError):
             attendance_date = date.today()
         
-        # Process attendance for each student in teacher's class
+        # Process attendance for each student in teacher's classes
         students = Student.objects.filter(
-            student_class=teacher.class_section,
+            student_class__in=teacher.class_section.all(),
             is_active=True
         )
         
@@ -1194,8 +1193,8 @@ def result_submit(request):
             messages.error(request, f'Error submitting result: {str(e)}')
     
     # Get students based on teacher's class or all students
-    if teacher.class_section:
-        students = Student.objects.filter(student_class=teacher.class_section, is_active=True)
+    if teacher.class_section.exists():
+        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
     else:
         students = Student.objects.filter(is_active=True)
     
@@ -1578,8 +1577,8 @@ def result_download(request):
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     
     # Get students based on teacher's class or all students
-    if teacher.class_section:
-        students = Student.objects.filter(student_class=teacher.class_section, is_active=True)
+    if teacher.class_section.exists():
+        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
     else:
         students = Student.objects.filter(is_active=True)
     
@@ -1921,8 +1920,8 @@ def teacher_admit_card_requests(request):
         return redirect('teacher_login')
         
     teacher = Teacher.objects.get(pk=request.session.get('teacher_id'))
-    if teacher.class_section:
-        requests = AdmitCardRequest.objects.filter(school_class=teacher.class_section).order_by('-created_at')
+    if teacher.class_section.exists():
+        requests = AdmitCardRequest.objects.filter(school_class__in=teacher.class_section.all()).order_by('-created_at')
     else:
         requests = []
         
@@ -1935,7 +1934,7 @@ def teacher_admit_card_schedule(request, request_id):
     ac_request = get_object_or_404(AdmitCardRequest, pk=request_id)
     teacher = Teacher.objects.get(pk=request.session.get('teacher_id'))
     
-    if ac_request.school_class != teacher.class_section:
+    if not teacher.class_section.filter(pk=ac_request.school_class.pk).exists():
         messages.error(request, 'You can only schedule exams for your own class.')
         return redirect('teacher_admit_card_requests')
         
