@@ -33,6 +33,7 @@ urlpatterns = [
     path('admin/fees/add/', views.fee_add, name='fee_add'),
     path('admin/fees/<int:pk>/edit/', views.fee_edit, name='fee_edit'),
     path('fee/receipt/<int:payment_id>/', views.fee_receipt_pdf, name='fee_receipt_pdf'),
+    path('admin/api/students-by-class/', views.admin_get_students_by_class, name='admin_get_students_by_class'),
     
     # Salary Management (Admin)
     path('admin/salaries/', views.salary_management, name='salary_management'),
@@ -81,6 +82,7 @@ urlpatterns = [
     path('results/', views.result_list, name='result_list'),
     path('results/pdf/<int:student_id>/', views.result_pdf, name='result_pdf'),
     path('teacher/results/submit/', views.result_submit, name='result_submit'),
+    path('teacher/api/students-by-class/', views.teacher_get_students_by_class, name='teacher_get_students_by_class'),
     path('teacher/results/<int:pk>/edit/', views.result_edit, name='result_edit'),
     path('admin/results/verify/', views.result_verify, name='result_verify'),
     path('admin/results/verify-student/', views.result_verify_student_all, name='result_verify_student_all'),

@@ -53,14 +53,32 @@
         {% endif %}
 
         {% if teacher.class_section.exists %}
+
+        <!-- Class Filter Tabs -->
+        <div style="margin-bottom: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <span style="font-weight: 600; color: #555; margin-right: 0.25rem;">📂 Select Class:</span>
+            {% for cls in teacher_classes %}
+            <a href="?class_id={{ cls.id }}&date={{ selected_date|date:'Y-m-d' }}"
+               style="display: inline-block; padding: 0.5rem 1.25rem; border-radius: 25px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.25s;
+                      {% if selected_class.id == cls.id %}
+                      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+                      {% else %}
+                      background: white; color: #7c3aed; border: 2px solid #7c3aed;
+                      {% endif %}">
+                {{ cls }}
+            </a>
+            {% endfor %}
+        </div>
+
         <div class="card"
             style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white;">
             <div class="flex gap-2" style="align-items: center; justify-content: space-between; flex-wrap: wrap;">
                 <div>
-                    <h3 style="margin: 0;">&#128218; Classes: {% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% endfor %}</h3>
+                    <h3 style="margin: 0;">&#128218; Class: {{ selected_class }}</h3>
                     <small style="opacity: 0.8;">Total Students: {{ total_students }}</small>
                 </div>
                 <form method="get" class="flex gap-2" style="align-items: flex-end;">
+                    <input type="hidden" name="class_id" value="{{ selected_class.id }}">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label style="color: white; font-size: 0.875rem;">Select Date</label>
                         <input type="date" name="date" class="form-control" value="{{ selected_date|date:'Y-m-d' }}"
@@ -70,6 +88,7 @@
                 </form>
             </div>
         </div>
+
 
         <div class="stats-grid" style="margin-bottom: 1.5rem;">
             <div class="stat-card info">
@@ -109,6 +128,7 @@
             <form method="post" action="{% url 'student_attendance_mark' %}">
                 {% csrf_token %}
                 <input type="hidden" name="attendance_date" value="{{ selected_date|date:'Y-m-d' }}">
+                <input type="hidden" name="class_id" value="{{ selected_class.id }}">
 
                 <div class="table-container" style="box-shadow: none;">
                     <table class="table">
@@ -127,8 +147,8 @@
                                 <td>{{ forloop.counter }}</td>
                                 <td>
                                     <div class="flex gap-2" style="align-items: center;">
-                                        {% if item.student.photo %}
-                                        <img src="{% url 'serve_binary' 'Student' item.student.id 'photo' %}" alt="{{ item.student.name }}"
+                                        {% if item.student.photo_url or item.student.photo %}
+                                        <img src="{% if item.student.photo_url %}{{ item.student.photo_url }}{% else %}{% url 'serve_binary' 'Student' item.student.id 'photo' %}{% endif %}" alt="{{ item.student.name }}"
                                             style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                                         {% else %}
                                         <div

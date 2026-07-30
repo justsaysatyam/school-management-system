@@ -413,22 +413,45 @@ def teacher_delete(request, pk):
 # ===================== FEE MANAGEMENT =====================
 
 def fee_collection(request):
-    """View all fee payments"""
+    """View all fee payments with class and status filters"""
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
     
-    payments = StudentPayment.objects.all().select_related('student')
+    payments = StudentPayment.objects.all().select_related('student', 'student__student_class')
     
     # Filter by status
     status = request.GET.get('status')
     if status:
         payments = payments.filter(status=status)
     
+    # Filter by class
+    class_id = request.GET.get('class_id')
+    if class_id:
+        payments = payments.filter(student__student_class__id=class_id)
+    
+    all_classes = SchoolClass.objects.all().order_by('class_name', 'section')
+    
     context = {
         'payments': payments,
-        'selected_status': status
+        'selected_status': status,
+        'selected_class_id': class_id,
+        'all_classes': all_classes,
     }
     return render(request, 'admin_portal/fee_collection.html', context)
+
+
+def admin_get_students_by_class(request):
+    """AJAX endpoint: return students of a given class for admin portal"""
+    if request.session.get('user_type') != 'admin':
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    from django.http import JsonResponse
+    class_id = request.GET.get('class_id')
+    if not class_id:
+        return JsonResponse({'students': []})
+    students = Student.objects.filter(student_class__id=class_id, is_active=True).order_by('name')
+    student_list = [{'id': s.id, 'name': s.name} for s in students]
+    return JsonResponse({'students': student_list})
 
 
 def fee_add(request):
@@ -445,7 +468,12 @@ def fee_add(request):
     else:
         form = StudentPaymentForm()
     
-    return render(request, 'admin_portal/fee_form.html', {'form': form, 'title': 'Record Fee Payment'})
+    all_classes = SchoolClass.objects.all().order_by('class_name', 'section')
+    return render(request, 'admin_portal/fee_form.html', {
+        'form': form,
+        'title': 'Record Fee Payment',
+        'all_classes': all_classes,
+    })
 
 
 def fee_edit(request, pk):
@@ -464,7 +492,14 @@ def fee_edit(request, pk):
     else:
         form = StudentPaymentForm(instance=payment)
     
-    return render(request, 'admin_portal/fee_form.html', {'form': form, 'title': 'Edit Fee Payment'})
+    all_classes = SchoolClass.objects.all().order_by('class_name', 'section')
+    return render(request, 'admin_portal/fee_form.html', {
+        'form': form,
+        'title': 'Edit Fee Payment',
+        'all_classes': all_classes,
+        'edit_student': payment.student,
+    })
+
 
 
 # ===================== SALARY MANAGEMENT =====================
@@ -908,17 +943,36 @@ def teacher_salary_history(request):
 
 
 def teacher_students(request):
-    """Teacher view of students"""
+    """Teacher view of students with class filter"""
     if request.session.get('user_type') != 'teacher':
         return redirect('teacher_login')
     
     teacher_id = request.session.get('teacher_id')
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     
+    teacher_classes = teacher.class_section.all()
+    selected_class_id = request.GET.get('class_id')
+    selected_class = None
     students = []
-    if teacher.class_section.exists():
-        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
-    return render(request, 'teacher/students.html', {'students': students, 'teacher': teacher})
+    
+    if teacher_classes.exists():
+        if selected_class_id:
+            try:
+                selected_class = teacher_classes.get(pk=selected_class_id)
+                students = Student.objects.filter(student_class=selected_class, is_active=True).order_by('name')
+            except SchoolClass.DoesNotExist:
+                selected_class = None
+        else:
+            # Default: show first class
+            selected_class = teacher_classes.first()
+            students = Student.objects.filter(student_class=selected_class, is_active=True).order_by('name')
+    
+    return render(request, 'teacher/students.html', {
+        'students': students,
+        'teacher': teacher,
+        'teacher_classes': teacher_classes,
+        'selected_class': selected_class,
+    })
 
 
 def teacher_profile(request):
@@ -935,7 +989,7 @@ def teacher_profile(request):
 # ===================== STUDENT ATTENDANCE (Teacher Portal) =====================
 
 def student_attendance_list(request):
-    """Teacher view to mark student attendance"""
+    """Teacher view to mark student attendance with class filter"""
     if request.session.get('user_type') != 'teacher':
         return redirect('teacher_login')
     
@@ -943,14 +997,16 @@ def student_attendance_list(request):
     
     teacher_id = request.session.get('teacher_id')
     teacher = get_object_or_404(Teacher, pk=teacher_id)
+    teacher_classes = teacher.class_section.all()
     
     # Check if teacher has a class assigned
-    if not teacher.class_section.exists():
+    if not teacher_classes.exists():
         messages.warning(request, 'You are not assigned to any class')
         return render(request, 'teacher/student_attendance.html', {
             'teacher': teacher,
             'students_with_attendance': [],
             'selected_date': date.today(),
+            'teacher_classes': teacher_classes,
         })
     
     # Get selected date (default to today)
@@ -963,16 +1019,27 @@ def student_attendance_list(request):
     else:
         selected_date = date.today()
     
-    # Get all students in teacher's classes
+    # Get selected class
+    selected_class_id = request.GET.get('class_id')
+    selected_class = None
+    if selected_class_id:
+        try:
+            selected_class = teacher_classes.get(pk=selected_class_id)
+        except SchoolClass.DoesNotExist:
+            selected_class = None
+    if not selected_class:
+        selected_class = teacher_classes.first()
+    
+    # Get all students in selected class
     students = Student.objects.filter(
-        student_class__in=teacher.class_section.all(), 
+        student_class=selected_class,
         is_active=True
     ).order_by('name')
     
     # Get attendance records for the selected date
     attendance_records = StudentAttendance.objects.filter(
         date=selected_date,
-        student__student_class__in=teacher.class_section.all()
+        student__student_class=selected_class
     )
     attendance_dict = {record.student_id: record for record in attendance_records}
     
@@ -994,6 +1061,8 @@ def student_attendance_list(request):
     
     context = {
         'teacher': teacher,
+        'teacher_classes': teacher_classes,
+        'selected_class': selected_class,
         'students_with_attendance': students_with_attendance,
         'selected_date': selected_date,
         'present_count': present_count,
@@ -1026,11 +1095,18 @@ def student_attendance_mark(request):
         except (ValueError, TypeError):
             attendance_date = date.today()
         
-        # Process attendance for each student in teacher's classes
-        students = Student.objects.filter(
-            student_class__in=teacher.class_section.all(),
-            is_active=True
-        )
+        # Get the class_id from POST to process only that class
+        selected_class_id = request.POST.get('class_id')
+        teacher_classes = teacher.class_section.all()
+        
+        if selected_class_id:
+            try:
+                selected_class = teacher_classes.get(pk=selected_class_id)
+                students = Student.objects.filter(student_class=selected_class, is_active=True)
+            except SchoolClass.DoesNotExist:
+                students = Student.objects.filter(student_class__in=teacher_classes, is_active=True)
+        else:
+            students = Student.objects.filter(student_class__in=teacher_classes, is_active=True)
         
         for student in students:
             status = request.POST.get(f'status_{student.id}')
@@ -1043,7 +1119,10 @@ def student_attendance_mark(request):
                 )
         
         messages.success(request, f'Student attendance marked successfully for {attendance_date}')
-        return redirect(f'/teacher/student-attendance/?date={attendance_date}')
+        redirect_url = f'/teacher/student-attendance/?date={attendance_date}'
+        if selected_class_id:
+            redirect_url += f'&class_id={selected_class_id}'
+        return redirect(redirect_url)
     
     return redirect('student_attendance_list')
 
@@ -1141,19 +1220,45 @@ def result_list(request):
     return render(request, 'result_list.html', context)
 
 
+def teacher_get_students_by_class(request):
+    """AJAX endpoint to get students by class for teacher portal"""
+    import json
+    if request.session.get('user_type') != 'teacher':
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    from django.http import JsonResponse
+    teacher_id = request.session.get('teacher_id')
+    teacher = get_object_or_404(Teacher, pk=teacher_id)
+    class_id = request.GET.get('class_id')
+    
+    if not class_id:
+        return JsonResponse({'students': []})
+    
+    try:
+        school_class = teacher.class_section.get(pk=class_id)
+        students = Student.objects.filter(student_class=school_class, is_active=True).order_by('name')
+        student_list = [{'id': s.id, 'name': s.name, 'class': str(s.student_class)} for s in students]
+        return JsonResponse({'students': student_list})
+    except SchoolClass.DoesNotExist:
+        return JsonResponse({'students': [], 'error': 'Class not assigned to you'})
+
+
 def result_submit(request):
-    """Teacher view to submit student results"""
+    """Teacher view to submit student results with class-based student filter"""
     if request.session.get('user_type') != 'teacher':
         return redirect('teacher_login')
     
     teacher_id = request.session.get('teacher_id')
     teacher = get_object_or_404(Teacher, pk=teacher_id)
+    teacher_classes = teacher.class_section.all()
     
     if request.method == 'POST':
         student_id = request.POST.get('student')
         exam_name = request.POST.get('exam_name')
         exam_date = request.POST.get('exam_date')
         remarks = request.POST.get('remarks', '')
+        selected_class_id = request.POST.get('selected_class_id', '')
         
         # Arrays for multiple subjects
         subject_ids = request.POST.getlist('subject[]')
@@ -1192,12 +1297,6 @@ def result_submit(request):
         except Exception as e:
             messages.error(request, f'Error submitting result: {str(e)}')
     
-    # Get students based on teacher's class or all students
-    if teacher.class_section.exists():
-        students = Student.objects.filter(student_class__in=teacher.class_section.all(), is_active=True)
-    else:
-        students = Student.objects.filter(is_active=True)
-    
     subjects = Subject.objects.all()
     exam_terms = ExamTerm.objects.filter(is_active=True)
     
@@ -1208,7 +1307,7 @@ def result_submit(request):
     
     context = {
         'teacher': teacher,
-        'students': students,
+        'teacher_classes': teacher_classes,
         'subjects': subjects,
         'exam_terms': exam_terms,
         'submitted_results': submitted_results,
@@ -1836,11 +1935,17 @@ def gallery_delete(request, pk):
 # ===================== BINARY FILE SERVING =====================
 
 def serve_binary(request, model_name, record_id, field_name):
-    """View to serve binary data from any model specifically for this project"""
+    """View to serve binary data from any model specifically for this project.
+    If the record has a photo_url (for photo fields), redirect to that URL instead."""
     try:
         model = apps.get_model('core', model_name)
         record = get_object_or_404(model, pk=record_id)
-        
+
+        # If serving a photo field and photo_url is set, redirect to external URL
+        if field_name == 'photo' and hasattr(record, 'photo_url') and record.photo_url:
+            from django.shortcuts import redirect as django_redirect
+            return django_redirect(record.photo_url)
+
         # Get binary data
         binary_data = getattr(record, field_name, None)
         if not binary_data:

@@ -1,0 +1,17 @@
+{# 
+  Reusable photo display snippet.
+  Usage: {% include 'partials/photo_display.html' with obj=student model_name='Student' size='40px' %}
+  - obj: Student or Teacher instance
+  - model_name: 'Student' or 'Teacher'
+  - size: CSS size string e.g. '40px', '80px'
+  - extra_style: optional extra CSS
+#}
+{% if obj.photo_url or obj.photo %}
+<img src="{% if obj.photo_url %}{{ obj.photo_url }}{% else %}{% url 'serve_binary' model_name obj.id 'photo' %}{% endif %}"
+     alt="{{ obj.name }}"
+     style="width: {{ size|default:'40px' }}; height: {{ size|default:'40px' }}; border-radius: 50%; object-fit: cover; {{ extra_style }}">
+{% else %}
+<div style="width: {{ size|default:'40px' }}; height: {{ size|default:'40px' }}; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: calc({{ size|default:'40px' }} * 0.4); {{ extra_style }}">
+    {{ obj.name|slice:":1"|upper }}
+</div>
+{% endif %}

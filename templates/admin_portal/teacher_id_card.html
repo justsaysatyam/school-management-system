@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -350,8 +350,7 @@
                 </div>
             </div>
             <div class="card-body">
-                {% if teacher.photo %}
-                <img src="{% url 'serve_binary' 'Teacher' teacher.id 'photo' %}" alt="{{ teacher.name }}" class="profile-photo">
+                {% if teacher.photo_url or teacher.photo %}<img src="{% if teacher.photo_url %}{{ teacher.photo_url }}{% else %}{% url 'serve_binary' 'Teacher' teacher.id 'photo' %}{% endif %}" alt="{{ teacher.name }}" class="profile-photo">
                 {% else %}
                 <div class="profile-photo" style="display: flex; align-items: center; justify-content: center; font-size: 4rem; color: #d1d5db; background: #f3f4f6;">👤</div>
                 {% endif %}
@@ -419,3 +418,4 @@
 </body>
 
 </html>
+

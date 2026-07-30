@@ -14,33 +14,175 @@
             <a href="{% url 'fee_collection' %}" class="btn btn-outline">← Back</a>
         </div>
 
-        <div class="card" style="max-width: 700px;">
-            <form method="post">
+        <div class="card" style="max-width: 750px;">
+            <form method="post" id="fee-form">
                 {% csrf_token %}
-                <div class="grid-2">
-                    <div class="form-group"><label class="form-label">Student *</label>{{ form.student }}</div>
-                    <div class="form-group"><label class="form-label">Payment Mode</label>{{ form.payment_mode }}</div>
+
+                <!-- Step 1: Class Filter -->
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label class="form-label" style="font-weight: 700; color: #7c3aed;">
+                        🏫 Step 1 — Select Class
+                    </label>
+                    <select id="class_selector"
+                        style="width: 100%; padding: 0.65rem 0.9rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.97rem; transition: border-color 0.2s; outline: none;"
+                        onmouseover="" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e5e7eb'">
+                        <option value="">-- Select Class --</option>
+                        {% for cls in all_classes %}
+                        <option value="{{ cls.id }}"
+                            {% if edit_student and edit_student.student_class.id == cls.id %}selected{% endif %}>
+                            {{ cls }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group"><label class="form-label">Paid Amount (₹) *</label>{{ form.paid_amount }}
+
+                <!-- Step 2: Student (loaded via AJAX) -->
+                <div class="form-group" id="student-group"
+                    style="margin-bottom: 1.25rem; {% if not edit_student %}display:none;{% endif %}">
+                    <label class="form-label" style="font-weight: 700; color: #7c3aed;">
+                        👤 Step 2 — Select Student *
+                    </label>
+                    <select name="student" id="student_select" required
+                        style="width: 100%; padding: 0.65rem 0.9rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.97rem; transition: border-color 0.2s; outline: none;"
+                        onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e5e7eb'">
+                        <option value="">-- Select Student --</option>
+                        {% if edit_student %}
+                        <option value="{{ edit_student.id }}" selected>{{ edit_student.name }}</option>
+                        {% endif %}
+                    </select>
+                    <div id="student-loading"
+                        style="display:none; margin-top:0.4rem; color:#7c3aed; font-size:0.85rem;">
+                        ⏳ Loading students...
                     </div>
-                    <div class="form-group"><label class="form-label">Due Amount (₹)</label>{{ form.due_amount }}</div>
                 </div>
+
+                <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 1.25rem 0;">
+
+                <!-- Payment Details -->
+                <p style="font-weight: 700; color: #444; margin-bottom: 1rem;">💳 Payment Details</p>
+
                 <div class="grid-2">
-                    <div class="form-group"><label class="form-label">Month</label>{{ form.month }}</div>
-                    <div class="form-group"><label class="form-label">Year</label>{{ form.year }}</div>
+                    <div class="form-group">
+                        <label class="form-label">Payment Mode</label>
+                        {{ form.payment_mode }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        {{ form.status }}
+                    </div>
                 </div>
+
                 <div class="grid-2">
-                    <div class="form-group"><label class="form-label">Payment Date</label>{{ form.payment_date }}</div>
-                    <div class="form-group"><label class="form-label">Status</label>{{ form.status }}</div>
+                    <div class="form-group">
+                        <label class="form-label">Paid Amount (₹) *</label>
+                        {{ form.paid_amount }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Due Amount (₹)</label>
+                        {{ form.due_amount }}
+                    </div>
                 </div>
-                <div class="form-group"><label class="form-label">Remarks</label>{{ form.remarks }}</div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Month</label>
+                        {{ form.month }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Year</label>
+                        {{ form.year }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Payment Date</label>
+                    {{ form.payment_date }}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Remarks</label>
+                    {{ form.remarks }}
+                </div>
+
                 <div class="flex gap-2 mt-3">
-                    <button type="submit" class="btn btn-primary">Save Payment</button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">💾 Save Payment</button>
                     <a href="{% url 'fee_collection' %}" class="btn btn-outline">Cancel</a>
                 </div>
             </form>
         </div>
     </main>
 </div>
+
+<script>
+    const classSelector = document.getElementById('class_selector');
+    const studentGroup = document.getElementById('student-group');
+    const studentSelect = document.getElementById('student_select');
+    const studentLoading = document.getElementById('student-loading');
+
+    // Edit mode: if a class is already selected, load its students
+    {% if edit_student %}
+    const preSelectedStudentId = "{{ edit_student.id }}";
+    const preSelectedStudentName = "{{ edit_student.name }}";
+    {% else %}
+    const preSelectedStudentId = null;
+    const preSelectedStudentName = null;
+    {% endif %}
+
+    function loadStudents(classId, preSelectId = null) {
+        if (!classId) {
+            studentGroup.style.display = 'none';
+            studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+            return;
+        }
+
+        studentGroup.style.display = 'block';
+        studentLoading.style.display = 'block';
+        studentSelect.disabled = true;
+        studentSelect.innerHTML = '<option value="">Loading...</option>';
+
+        fetch(`{% url 'admin_get_students_by_class' %}?class_id=${classId}`)
+            .then(res => res.json())
+            .then(data => {
+                studentLoading.style.display = 'none';
+                studentSelect.disabled = false;
+                studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+
+                if (data.students && data.students.length > 0) {
+                    data.students.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        if (preSelectId && String(s.id) === String(preSelectId)) {
+                            opt.selected = true;
+                        }
+                        studentSelect.appendChild(opt);
+                    });
+                } else {
+                    studentSelect.innerHTML = '<option value="">No active students in this class</option>';
+                }
+            })
+            .catch(() => {
+                studentLoading.style.display = 'none';
+                studentSelect.disabled = false;
+                studentSelect.innerHTML = '<option value="">Error loading students</option>';
+            });
+    }
+
+    classSelector.addEventListener('change', function () {
+        loadStudents(this.value);
+    });
+
+    // On page load — if editing, auto-load students for the pre-selected class
+    document.addEventListener('DOMContentLoaded', function () {
+        const initialClass = classSelector.value;
+        if (initialClass) {
+            loadStudents(initialClass, preSelectedStudentId);
+        }
+        // If only one class, auto-select
+        if (classSelector.options.length === 2) {
+            classSelector.selectedIndex = 1;
+            loadStudents(classSelector.value);
+        }
+    });
+</script>
 {% endblock %}

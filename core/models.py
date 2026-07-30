@@ -67,6 +67,7 @@ class Teacher(models.Model):
     photo = models.BinaryField(blank=True, null=True)
     photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
     photo_filename = models.CharField(max_length=255, blank=True, null=True)
+    photo_url = models.URLField(max_length=500, blank=True, null=True, help_text='External photo URL (optional, used if no uploaded photo)')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -96,6 +97,7 @@ class Student(models.Model):
     photo_filename = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128)
     is_active = models.BooleanField(default=True)
+    photo_url = models.URLField(max_length=500, blank=True, null=True, help_text='External photo URL (optional, used if no uploaded photo)')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def set_password(self, raw_password):

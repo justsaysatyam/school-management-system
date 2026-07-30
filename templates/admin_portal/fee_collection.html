@@ -20,17 +20,50 @@
         {% endfor %}
         {% endif %}
 
+        <!-- Filter Card -->
         <div class="card mb-3">
-            <form method="get" class="flex gap-2 items-center">
-                <label class="form-label" style="margin: 0;">Filter:</label>
-                <select name="status" class="form-input" style="width: auto;">
-                    <option value="">All Status</option>
-                    <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>Paid</option>
-                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
-                    <option value="Partial" {% if selected_status == 'Partial' %}selected{% endif %}>Partial</option>
+            <form method="get" class="flex gap-2 items-center" style="flex-wrap: wrap;">
+                <label class="form-label" style="margin: 0; font-weight: 600;">🔍 Filter:</label>
+
+                <!-- Class Filter -->
+                <select name="class_id" class="form-input" style="width: auto; min-width: 160px;">
+                    <option value="">All Classes</option>
+                    {% for cls in all_classes %}
+                    <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
+                        {{ cls }}
+                    </option>
+                    {% endfor %}
                 </select>
-                <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+
+                <!-- Status Filter -->
+                <select name="status" class="form-input" style="width: auto; min-width: 140px;">
+                    <option value="">All Status</option>
+                    <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>✅ Paid</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>⏳ Pending</option>
+                    <option value="Partial" {% if selected_status == 'Partial' %}selected{% endif %}>🔶 Partial</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary btn-sm">Apply Filter</button>
+                {% if selected_class_id or selected_status %}
+                <a href="{% url 'fee_collection' %}" class="btn btn-outline btn-sm">✕ Clear</a>
+                {% endif %}
             </form>
+
+            <!-- Active filter indicator -->
+            {% if selected_class_id or selected_status %}
+            <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.85rem; color: #666;">Active filters:</span>
+                {% if selected_class_id %}
+                {% for cls in all_classes %}{% if cls.id|stringformat:"s" == selected_class_id %}
+                <span style="background: #ede9fe; color: #7c3aed; padding: 0.2rem 0.7rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">🏫 {{ cls }}</span>
+                {% endif %}{% endfor %}
+                {% endif %}
+                {% if selected_status %}
+                <span style="background: #e0f2fe; color: #0369a1; padding: 0.2rem 0.7rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">📋 {{ selected_status }}</span>
+                {% endif %}
+                <span style="font-size: 0.82rem; color: #888;">— {{ payments|length }} record(s) found</span>
+            </div>
+            {% endif %}
         </div>
 
         <div class="table-container">
@@ -39,6 +72,7 @@
                     <tr>
                         <th>#</th>
                         <th>Student</th>
+                        <th>Class</th>
                         <th>Month/Year</th>
                         <th>Paid Amount</th>
                         <th>Due Amount</th>
@@ -53,6 +87,15 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ payment.student.name }}</strong></td>
+                        <td>
+                            {% if payment.student.student_class %}
+                            <span style="background: #ede9fe; color: #7c3aed; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">
+                                {{ payment.student.student_class }}
+                            </span>
+                            {% else %}
+                            <span style="color: #aaa;">—</span>
+                            {% endif %}
+                        </td>
                         <td>{{ payment.month }} {{ payment.year }}</td>
                         <td class="text-success">₹{{ payment.paid_amount }}</td>
                         <td class="text-danger">₹{{ payment.due_amount }}</td>
@@ -70,8 +113,13 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted p-4">No fee payments recorded yet. <a
-                                href="{% url 'fee_add' %}">Record first payment</a></td>
+                        <td colspan="10" class="text-center text-muted p-4">
+                            {% if selected_class_id or selected_status %}
+                            No fee payments found for selected filters. <a href="{% url 'fee_collection' %}">Clear filters</a>
+                            {% else %}
+                            No fee payments recorded yet. <a href="{% url 'fee_add' %}">Record first payment</a>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -79,4 +127,4 @@
         </div>
     </main>
 </div>
-{% endblock %}
+{% endblock %}

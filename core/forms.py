@@ -48,6 +48,13 @@ class TeacherForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input'}), required=False)
     
     photo = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    photo_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://example.com/photo.jpg  (optional)'
+        })
+    )
     
     class Meta:
         model = Teacher
@@ -71,13 +78,23 @@ class TeacherForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        photo_url = self.cleaned_data.get('photo_url')
         photo = self.cleaned_data.get('photo')
-        if photo and hasattr(photo, 'read'):
+        if photo_url:
+            # URL provided — save URL, clear binary photo
+            instance.photo_url = photo_url
+            instance.photo = None
+            instance.photo_mimetype = None
+            instance.photo_filename = None
+        elif photo and hasattr(photo, 'read'):
+            # File uploaded — save binary, clear URL
             instance.photo = photo.read()
             instance.photo_mimetype = photo.content_type
             instance.photo_filename = photo.name
+            instance.photo_url = None
         if commit:
             instance.save()
+            self._save_m2m()
         return instance
 
 
@@ -86,6 +103,13 @@ class StudentForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-input'}), required=False)
     
     photo = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    photo_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://example.com/photo.jpg  (optional)'
+        })
+    )
     
     class Meta:
         model = Student
@@ -104,11 +128,20 @@ class StudentForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        photo_url = self.cleaned_data.get('photo_url')
         photo = self.cleaned_data.get('photo')
-        if photo and hasattr(photo, 'read'):
+        if photo_url:
+            # URL provided — save URL, clear binary photo
+            instance.photo_url = photo_url
+            instance.photo = None
+            instance.photo_mimetype = None
+            instance.photo_filename = None
+        elif photo and hasattr(photo, 'read'):
+            # File uploaded — save binary, clear URL
             instance.photo = photo.read()
             instance.photo_mimetype = photo.content_type
             instance.photo_filename = photo.name
+            instance.photo_url = None
         if commit:
             instance.save()
         return instance

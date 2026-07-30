@@ -172,17 +172,26 @@
     <div class="content-grid">
         <div class="form-card">
             <h2 style="margin-top: 0; color: #667eea;">Submit New Result</h2>
-            <form method="POST">
+            <form method="POST" id="result-form">
                 {% csrf_token %}
+                <input type="hidden" name="selected_class_id" id="hidden_class_id">
 
                 <div class="form-group">
-                    <label for="student">Student *</label>
-                    <select name="student" id="student" required>
-                        <option value="">Select Student</option>
-                        {% for student in students %}
-                        <option value="{{ student.id }}">{{ student.name }} - {{ student.student_class }}</option>
+                    <label for="class_selector">🏫 Select Class First *</label>
+                    <select id="class_selector" required>
+                        <option value="">-- Select Class --</option>
+                        {% for cls in teacher_classes %}
+                        <option value="{{ cls.id }}">{{ cls }}</option>
                         {% endfor %}
                     </select>
+                </div>
+
+                <div class="form-group" id="student-group" style="display:none;">
+                    <label for="student">👤 Select Student *</label>
+                    <select name="student" id="student" required>
+                        <option value="">-- Select Student --</option>
+                    </select>
+                    <div id="student-loading" style="display:none; color:#667eea; font-size:0.9rem; margin-top:0.3rem;">⏳ Loading students...</div>
                 </div>
 
                 <div class="form-group">
@@ -240,6 +249,59 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ===== CLASS → STUDENT AJAX LOADING =====
+        const classSelector = document.getElementById('class_selector');
+        const studentGroup = document.getElementById('student-group');
+        const studentSelect = document.getElementById('student');
+        const studentLoading = document.getElementById('student-loading');
+        const hiddenClassId = document.getElementById('hidden_class_id');
+
+        classSelector.addEventListener('change', function() {
+            const classId = this.value;
+            if (!classId) {
+                studentGroup.style.display = 'none';
+                studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+                hiddenClassId.value = '';
+                return;
+            }
+
+            hiddenClassId.value = classId;
+            studentLoading.style.display = 'block';
+            studentGroup.style.display = 'block';
+            studentSelect.innerHTML = '<option value="">Loading...</option>';
+            studentSelect.disabled = true;
+
+            fetch(`{% url 'teacher_get_students_by_class' %}?class_id=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    studentLoading.style.display = 'none';
+                    studentSelect.disabled = false;
+                    if (data.students && data.students.length > 0) {
+                        studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+                        data.students.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s.id;
+                            opt.textContent = s.name;
+                            studentSelect.appendChild(opt);
+                        });
+                    } else {
+                        studentSelect.innerHTML = '<option value="">No students in this class</option>';
+                    }
+                })
+                .catch(err => {
+                    studentLoading.style.display = 'none';
+                    studentSelect.disabled = false;
+                    studentSelect.innerHTML = '<option value="">Error loading students</option>';
+                });
+        });
+
+        // If only one class, auto-select it
+        if (classSelector.options.length === 2) {
+            classSelector.selectedIndex = 1;
+            classSelector.dispatchEvent(new Event('change'));
+        }
+
+        // ===== ADD SUBJECT ROWS =====
         const addBtn = document.getElementById('add-subject-btn');
         const container = document.getElementById('subjects-container');
         let subjectCount = 1;
@@ -281,6 +343,7 @@
         });
     });
 </script>
+
 
         <div class="results-card">
             <h2 style="margin-top: 0; color: #667eea;">Your Submitted Results</h2>

@@ -29,10 +29,37 @@
     </aside>
     <main class="main-content">
         <div class="top-header">
-            <h1 class="page-title">&#127890; My Students {% if teacher.class_section.exists %}- {% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-            </h1>
+            <h1 class="page-title">&#127890; My Students</h1>
         </div>
-        {% if teacher.class_section.exists %}
+
+        {% if teacher_classes.exists %}
+
+        <!-- Class Filter Tabs -->
+        <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <span style="font-weight: 600; color: #555; margin-right: 0.25rem;">📂 Select Class:</span>
+            {% for cls in teacher_classes %}
+            <a href="?class_id={{ cls.id }}"
+               style="display: inline-block; padding: 0.5rem 1.25rem; border-radius: 25px; font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.25s;
+                      {% if selected_class.id == cls.id %}
+                      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+                      {% else %}
+                      background: white; color: #7c3aed; border: 2px solid #7c3aed;
+                      {% endif %}">
+                {{ cls }}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if selected_class %}
+        <div class="card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 1rem 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                <div>
+                    <strong style="font-size: 1.1rem;">🏫 {{ selected_class }}</strong>
+                    <span style="opacity:0.85; margin-left: 1rem;">Total Students: {{ students|length }}</span>
+                </div>
+            </div>
+        </div>
+
         <div class="table-container">
             <table class="table">
                 <thead>
@@ -59,12 +86,14 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted p-4">No students in your class</td>
+                        <td colspan="7" class="text-center text-muted p-4">No students in this class</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% endif %}
+
         {% else %}
         <div class="card">
             <p class="text-center text-muted p-4">You are not assigned as class teacher to any class yet.</p>
@@ -72,4 +101,4 @@
         {% endif %}
     </main>
 </div>
-{% endblock %}
+{% endblock %}

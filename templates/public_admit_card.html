@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 {% load static %}
 <html lang="en">
 <head>
@@ -347,8 +347,7 @@
                 </div>
 
                 <div class="photo-box">
-                    {% if student.photo %}
-                    <img src="{% url 'serve_binary' 'Student' student.id 'photo' %}" alt="Student Photo">
+                    {% if student.photo_url or student.photo %}<img src="{% if student.photo_url %}{{ student.photo_url }}{% else %}{% url 'serve_binary' 'Student' student.id 'photo' %}{% endif %}" alt="Student Photo">
                     {% else %}
                     Affix Passport Size Photo Here
                     {% endif %}
@@ -413,3 +412,4 @@
     </div>
 </body>
 </html>
+

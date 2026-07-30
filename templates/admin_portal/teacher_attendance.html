@@ -103,8 +103,8 @@
                                 <td>{{ forloop.counter }}</td>
                                 <td>
                                     <div class="flex gap-2" style="align-items: center;">
-                                        {% if item.teacher.photo %}
-                                        <img src="{% url 'serve_binary' 'Teacher' item.teacher.id 'photo' %}" alt="{{ item.teacher.name }}" 
+                                        {% if item.teacher.photo_url or item.teacher.photo %}
+                                        <img src="{% if item.teacher.photo_url %}{{ item.teacher.photo_url }}{% else %}{% url 'serve_binary' 'Teacher' item.teacher.id 'photo' %}{% endif %}" alt="{{ item.teacher.name }}" 
                                              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                         {% else %}
                                         <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">

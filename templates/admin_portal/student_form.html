@@ -69,19 +69,47 @@
                     {{ form.address }}
                 </div>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Photo</label>
-                        {{ form.photo }}
-                        {% if student.photo %}
-                        <small class="text-muted">Current: {{ student.photo.name }}</small>
-                        {% endif %}
+                <div class="form-group">
+                    <label class="form-label" style="font-weight: 700; color: #7c3aed;">📸 Photo</label>
+
+                    <!-- Current photo preview -->
+                    {% if student.photo_url or student.photo %}
+                    <div style="margin-bottom: 0.75rem;">
+                        <p style="font-size: 0.82rem; color: #666; margin-bottom: 0.4rem;">Current Photo:</p>
+                        <img
+                            src="{% if student.photo_url %}{{ student.photo_url }}{% else %}{% url 'serve_binary' 'Student' student.id 'photo' %}{% endif %}"
+                            alt="Current photo" id="current-preview"
+                            style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #7c3aed; display: block;">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <div style="padding-top: 0.5rem;">
-                            {{ form.is_active }} Active
+                    {% endif %}
+
+                    <!-- Tab toggle -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <button type="button" id="tab-upload" onclick="switchPhotoTab('upload')"
+                            style="padding: 0.35rem 1rem; border-radius: 20px; border: 2px solid #7c3aed; background: white; color: #7c3aed; font-size: 0.85rem; cursor: pointer; font-weight: 600;">⬆ Upload File</button>
+                        <button type="button" id="tab-url" onclick="switchPhotoTab('url')"
+                            style="padding: 0.35rem 1rem; border-radius: 20px; border: 2px solid #7c3aed; background: #7c3aed; color: white; font-size: 0.85rem; cursor: pointer; font-weight: 600;">🔗 Paste URL</button>
+                    </div>
+
+                    <div id="panel-upload" style="display:none;">
+                        {{ form.photo }}
+                        <small style="color: #888; font-size: 0.8rem;">Image file upload karain (JPG/PNG)</small>
+                    </div>
+
+                    <div id="panel-url">
+                        {{ form.photo_url }}
+                        <small style="color: #888; font-size: 0.8rem;">Paste karo external image URL (e.g. Google Drive, Cloudinary, etc.)</small>
+                        <div style="margin-top: 0.5rem;">
+                            <img id="url-preview" src="" alt="Preview"
+                                style="display:none; width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #7c3aed;">
                         </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div style="padding-top: 0.5rem;">
+                        {{ form.is_active }} Active
                     </div>
                 </div>
 
@@ -95,4 +123,50 @@
         </div>
     </main>
 </div>
-{% endblock %}
+
+<script>
+function switchPhotoTab(tab) {
+    const uploadPanel = document.getElementById('panel-upload');
+    const urlPanel = document.getElementById('panel-url');
+    const tabUpload = document.getElementById('tab-upload');
+    const tabUrl = document.getElementById('tab-url');
+    const activeStyle = 'background: #7c3aed; color: white;';
+    const inactiveStyle = 'background: white; color: #7c3aed;';
+    if (tab === 'upload') {
+        uploadPanel.style.display = 'block';
+        urlPanel.style.display = 'none';
+        tabUpload.style.cssText += activeStyle;
+        tabUrl.style.cssText += inactiveStyle;
+    } else {
+        uploadPanel.style.display = 'none';
+        urlPanel.style.display = 'block';
+        tabUpload.style.cssText += inactiveStyle;
+        tabUrl.style.cssText += activeStyle;
+    }
+}
+
+// Live URL preview
+document.addEventListener('DOMContentLoaded', function () {
+    const urlInput = document.getElementById('id_photo_url');
+    const urlPreview = document.getElementById('url-preview');
+    if (urlInput) {
+        // If URL already set (edit mode), switch to URL tab
+        if (urlInput.value && urlInput.value.trim() !== '') {
+            switchPhotoTab('url');
+            urlPreview.src = urlInput.value;
+            urlPreview.style.display = 'block';
+        }
+        urlInput.addEventListener('input', function () {
+            const val = this.value.trim();
+            if (val) {
+                urlPreview.src = val;
+                urlPreview.style.display = 'block';
+                urlPreview.onerror = function () { this.style.display = 'none'; };
+            } else {
+                urlPreview.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
