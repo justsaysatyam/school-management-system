@@ -1,0 +1,550 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Certificate – {{ student.name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #e8ecf1;
+            padding: 20px;
+            color: #222;
+        }
+
+        /* ===== Controls ===== */
+        .controls {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .btn {
+            padding: 11px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 0 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.25s;
+        }
+        .btn-print { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-back  { background: #6c757d; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+
+        /* ===== Certificate Sheet ===== */
+        .cert-sheet {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ===== Top Banner ===== */
+        .cert-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 50%, #1a5276 100%);
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .cert-banner::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        .cert-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -40px;
+            width: 160px; height: 160px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .banner-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 35px 14px;
+        }
+        .school-logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .school-logo {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+        .school-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .school-name-block { color: white; }
+        .school-name-block h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+        .school-name-block p {
+            font-size: 0.78rem;
+            opacity: 0.85;
+            margin-top: 3px;
+        }
+        .reg-no-box {
+            text-align: right;
+            color: white;
+        }
+        .reg-no-box .label {
+            font-size: 0.68rem;
+            opacity: 0.75;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .reg-no-box .value {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .banner-subtitle {
+            text-align: center;
+            padding: 10px 20px 18px;
+            position: relative;
+        }
+        .cert-title-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.35);
+            color: white;
+            padding: 6px 30px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Gold divider */
+        .gold-divider {
+            height: 5px;
+            background: linear-gradient(90deg, #f5a623, #f7d77b, #e8a100, #f7d77b, #f5a623);
+        }
+
+        /* ===== Body ===== */
+        .cert-body {
+            padding: 30px 35px;
+        }
+
+        /* Student Profile Row */
+        .profile-row {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .photo-block {
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .photo-frame {
+            width: 130px; height: 155px;
+            border: 3px solid #2d6a9f;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f0f4f8;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { font-size: 4rem; color: #2d6a9f; }
+        .photo-label {
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: #2d6a9f;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-block { flex: 1; }
+        .student-name-big {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1e3a5f;
+            margin-bottom: 4px;
+        }
+        .student-class-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #2d6a9f, #1e3a5f);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        /* Details Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 24px;
+        }
+        .detail-row {
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px dashed #d0d5dd;
+            padding-bottom: 8px;
+        }
+        .detail-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 2px;
+        }
+        .detail-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        /* Section header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 22px 0 14px;
+        }
+        .section-line {
+            flex: 1;
+            height: 1.5px;
+            background: linear-gradient(90deg, #2d6a9f, transparent);
+        }
+        .section-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #2d6a9f;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+
+        /* Login Credentials Card */
+        .login-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+            border-radius: 12px;
+            padding: 18px 24px;
+            color: white;
+            margin-bottom: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-card::before {
+            content: '🔐';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            opacity: 0.15;
+        }
+        .login-card-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .login-creds {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        .login-cred-item .lc-label {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        .login-cred-item .lc-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+        .login-url {
+            margin-top: 10px;
+            font-size: 0.72rem;
+            opacity: 0.75;
+        }
+
+        /* Instructions */
+        .instructions-box {
+            background: #f8f9fc;
+            border-left: 4px solid #2d6a9f;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+        .instructions-box ul {
+            padding-left: 18px;
+            font-size: 0.8rem;
+            color: #555;
+            line-height: 1.7;
+        }
+        .instructions-box ul li { margin-bottom: 3px; }
+
+        /* Signatures */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 0 0;
+            border-top: 1.5px dashed #bdc3c7;
+            margin-top: 16px;
+        }
+        .sig-block { text-align: center; width: 30%; }
+        .sig-line { height: 40px; border-bottom: 1.5px solid #333; margin-bottom: 6px; }
+        .sig-label { font-size: 0.7rem; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Footer */
+        .cert-footer {
+            background: linear-gradient(135deg, #1e3a5f, #2d6a9f);
+            color: rgba(255,255,255,0.85);
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 0.68rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 6rem;
+            font-weight: 900;
+            color: rgba(45, 106, 159, 0.04);
+            pointer-events: none;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            z-index: 0;
+        }
+
+        /* ===== Print ===== */
+        @media print {
+            body { background: white; padding: 0; }
+            .controls { display: none !important; }
+            .cert-sheet { box-shadow: none; max-width: 100%; }
+            .cert-banner, .login-card, .cert-footer {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .gold-divider {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @page { margin: 8mm; size: A4; }
+        }
+
+        @media (max-width: 600px) {
+            .banner-top { flex-direction: column; gap: 12px; text-align: center; }
+            .profile-row { flex-direction: column; align-items: center; }
+            .details-grid { grid-template-columns: 1fr; }
+            .login-creds { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn btn-back" onclick="window.history.back()">← Back to List</button>
+        <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
+        <button class="btn btn-print" onclick="window.print()" style="background: linear-gradient(135deg, #10b981, #059669);">📥 Save as PDF</button>
+    </div>
+
+    <div class="cert-sheet">
+        <!-- Watermark -->
+        <div class="watermark">MPS</div>
+
+        <!-- Top Banner -->
+        <div class="cert-banner">
+            <div class="banner-top">
+                <div class="school-logo-wrap">
+                    <div class="school-logo">
+                        {% if school_info and school_info.logo %}
+                            <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo">
+                        {% else %}
+                            <img src="{% static 'images/logo.png' %}" alt="Logo">
+                        {% endif %}
+                    </div>
+                    <div class="school-name-block">
+                        <h1>{% if school_info %}{{ school_info.school_name }}{% else %}Mid Point School{% endif %}</h1>
+                        <p>{% if school_info %}{{ school_info.address }}{% else %}Barahiya, Near Hanuman Temple{% endif %}</p>
+                        <p>📞 {% if school_info %}{{ school_info.contact_number }}{% else %}+91-XXXXXXXXXX{% endif %} | ✉️ {% if school_info %}{{ school_info.email }}{% else %}school@midpoint.edu{% endif %}</p>
+                    </div>
+                </div>
+                <div class="reg-no-box">
+                    <div class="label">Registration No.</div>
+                    <div class="value">{{ student_code }}</div>
+                    <div style="font-size: 0.7rem; opacity: 0.75; margin-top: 6px;">
+                        Admission: {{ student.admission_date|date:"d M Y" }}
+                    </div>
+                </div>
+            </div>
+            <div class="banner-subtitle">
+                <span class="cert-title-badge">📋 Student Registration Certificate</span>
+            </div>
+        </div>
+        <div class="gold-divider"></div>
+
+        <!-- Body -->
+        <div class="cert-body" style="position: relative;">
+
+            <!-- Profile Row -->
+            <div class="profile-row">
+                <div class="photo-block">
+                    <div class="photo-frame">
+                        {% if student.photo_url or student.photo %}
+                            <img src="{% if student.photo_url %}{{ student.photo_url }}{% else %}{% url 'serve_binary' 'Student' student.id 'photo' %}{% endif %}" alt="{{ student.name }}">
+                        {% else %}
+                            <div class="photo-placeholder">👤</div>
+                        {% endif %}
+                    </div>
+                    <div class="photo-label">Student Photo</div>
+                </div>
+
+                <div class="info-block">
+                    <div class="student-name-big">{{ student.name }}</div>
+                    <div class="student-class-tag">{{ student.student_class|default:"Class Not Assigned" }}</div>
+
+                    <div class="details-grid">
+                        <div class="detail-row">
+                            <span class="detail-label">Father's Name</span>
+                            <span class="detail-value">{{ student.father_name }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Mobile Number</span>
+                            <span class="detail-value">{{ student.mobile }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email Address</span>
+                            <span class="detail-value">{{ student.email|default:"Not Provided" }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Admission Date</span>
+                            <span class="detail-value">{{ student.admission_date|date:"d F Y" }}</span>
+                        </div>
+                        <div class="detail-row" style="grid-column: 1 / -1;">
+                            <span class="detail-label">Address</span>
+                            <span class="detail-value">{{ student.address|default:"Not Provided" }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Monthly Fee</span>
+                            <span class="detail-value">₹{{ student.monthly_fee }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Account Status</span>
+                            <span class="detail-value" style="color: {% if student.is_active %}#10b981{% else %}#ef4444{% endif %};">
+                                {% if student.is_active %}✅ Active{% else %}❌ Inactive{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Credentials -->
+            <div class="section-header">
+                <div class="section-title">🔑 Login Credentials</div>
+                <div class="section-line"></div>
+            </div>
+            <div class="login-card">
+                <div class="login-card-title">🌐 Student Portal Access Details</div>
+                <div class="login-creds">
+                    <div class="login-cred-item">
+                        <div class="lc-label">Student ID / Roll No.</div>
+                        <div class="lc-value">{{ student_code }}</div>
+                    </div>
+                    <div class="login-cred-item">
+                        <div class="lc-label">Login Email / Username</div>
+                        <div class="lc-value">{{ login_email }}</div>
+                    </div>
+                    <div class="login-cred-item">
+                        <div class="lc-label">Password</div>
+                        <div class="lc-value">{{ raw_password }}</div>
+                    </div>
+                </div>
+                <div class="login-url">
+                    🔗 Student Portal: <strong>/student-login/</strong> &nbsp;|&nbsp; Roll No se login karein
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="section-header">
+                <div class="section-title">📌 Important Instructions</div>
+                <div class="section-line"></div>
+            </div>
+            <div class="instructions-box">
+                <ul>
+                    <li>This Registration Certificate is an official document of {% if school_info %}{{ school_info.school_name }}{% else %}Mid Point School{% endif %}.</li>
+                    <li>Please keep your login credentials confidential. Do not share your password with anyone.</li>
+                    <li>Students must carry their ID card at all times within school premises.</li>
+                    <li>In case of lost credentials, contact the school administration immediately.</li>
+                    <li>Monthly fee of <strong>₹{{ student.monthly_fee }}</strong> is due on the 1st of every month.</li>
+                    <li>This certificate is valid for Academic Year 2025-2026 only.</li>
+                </ul>
+            </div>
+
+            <!-- Signatures -->
+            <div class="signature-section">
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Class Teacher</div>
+                </div>
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Principal</div>
+                    {% if school_info %}<div style="font-size: 0.68rem; color: #888; margin-top: 2px;">{{ school_info.principal_name }}</div>{% endif %}
+                </div>
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Director</div>
+                    {% if school_info %}<div style="font-size: 0.68rem; color: #888; margin-top: 2px;">{{ school_info.director_name }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="cert-footer">
+            This is a computer-generated Registration Certificate from 
+            {% if school_info %}{{ school_info.school_name }}, {{ school_info.address }}{% else %}Mid Point School, Barahiya, Near Hanuman Temple{% endif %} | 
+            Generated on: {% now "d F Y" %}
+        </div>
+    </div>
+</body>
+</html>

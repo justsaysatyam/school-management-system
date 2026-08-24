@@ -98,10 +98,16 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{% url 'admin_grade_config' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_grade_config' %}active{% endif %}">
+                    <span class="icon">⚙️</span> Grade Criteria
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{% url 'gallery_list' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
                     <span class="icon">🖼️</span> Gallery
                 </a>
             </li>
+
 
             <span class="nav-section-title">Communication</span>
             <li class="nav-item">

@@ -10,7 +10,7 @@ from .models import (
     Admin, Teacher, Student, SchoolClass, Subject,
     TeacherPayment, StudentPayment, TeacherAttendance, StudentAttendance,
     Notice, Event, Exam, ExamTerm, SchoolInfo, GalleryImage, Result, Complaint, Inquiry,
-    AdmitCardRequest, ExamSchedule
+    AdmitCardRequest, ExamSchedule, GradeConfig
 )
 from .forms import (
     LoginForm, TeacherForm, StudentForm, TeacherPaymentForm, 
@@ -1168,23 +1168,10 @@ def result_list(request):
             total_marks_total = sum(r.total_marks for r in results)
             overall_percentage = (total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0
             
-            # Calculate overall grade
-            if overall_percentage >= 90:
-                overall_grade = 'A+'
-            elif overall_percentage >= 80:
-                overall_grade = 'A'
-            elif overall_percentage >= 70:
-                overall_grade = 'B+'
-            elif overall_percentage >= 60:
-                overall_grade = 'B'
-            elif overall_percentage >= 50:
-                overall_grade = 'C'
-            elif overall_percentage >= 33:
-                overall_grade = 'D'
-            else:
-                overall_grade = 'F'
-                
-            result_status = 'PASS' if overall_percentage >= 33 else 'FAIL'
+            # Use GradeConfig for grade calculation
+            grade_config = GradeConfig.get_config()
+            overall_grade = grade_config.get_grade(overall_percentage)
+            result_status = 'PASS' if overall_percentage >= grade_config.pass_percentage else 'FAIL'
             
             context = {
                 'student': student,
@@ -1800,9 +1787,21 @@ def admin_inquiry_delete(request, pk):
 
 
 def result_pdf(request, student_id):
-    """Generate printable result PDF for a student - public access"""
-    student = get_object_or_404(Student, pk=student_id)
+    """Generate printable result PDF for a student - accessible by admin, teacher, and student"""
+    user_type = request.session.get('user_type')
     
+    # Permission check
+    if user_type == 'student':
+        # Students can only view their own result
+        session_student_id = request.session.get('student_id')
+        if int(student_id) != int(session_student_id):
+            messages.error(request, 'Permission denied')
+            return redirect('student_dashboard')
+    elif user_type not in ('admin', 'teacher'):
+        # Must be logged in
+        return redirect('student_login')
+    
+    student = get_object_or_404(Student, pk=student_id)
     exam_name = request.GET.get('exam', '')
     
     # Get all verified results for this student and exam
@@ -1817,24 +1816,12 @@ def result_pdf(request, student_id):
     total_marks_total = sum(r.total_marks for r in results)
     overall_percentage = (total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0
     
-    # Calculate overall grade
-    if overall_percentage >= 90:
-        overall_grade = 'A+'
-    elif overall_percentage >= 80:
-        overall_grade = 'A'
-    elif overall_percentage >= 70:
-        overall_grade = 'B+'
-    elif overall_percentage >= 60:
-        overall_grade = 'B'
-    elif overall_percentage >= 50:
-        overall_grade = 'C'
-    elif overall_percentage >= 40:
-        overall_grade = 'D'
-    else:
-        overall_grade = 'F'
+    # Use GradeConfig for grade calculation
+    grade_config = GradeConfig.get_config()
+    overall_grade = grade_config.get_grade(overall_percentage)
+    result_status = 'PASS' if overall_percentage >= grade_config.pass_percentage else 'FAIL'
     
-    # Determine pass/fail status
-    result_status = 'PASS' if overall_percentage >= 40 else 'FAIL'
+    school_info = SchoolInfo.objects.first()
     
     context = {
         'student': student,
@@ -1846,8 +1833,10 @@ def result_pdf(request, student_id):
         'overall_grade': overall_grade,
         'result_status': result_status,
         'total_subjects': results.count(),
+        'school_info': school_info,
+        'grade_config': grade_config,
     }
-    return render(request, 'teacher/student_result_pdf.html', context)
+    return render(request, 'public_result_card.html', context)
 
 
 def fee_receipt_pdf(request, payment_id):
@@ -2126,3 +2115,107 @@ def public_admit_card_search(request):
             
     return render(request, 'admit_card_search.html', {'classes': classes, 'school_info': school_info})
 
+
+# ===================== STUDENT RESULT DOWNLOAD =====================
+
+def student_result_page(request):
+    """Student portal - view and download results"""
+    if request.session.get('user_type') != 'student':
+        return redirect('student_login')
+    
+    student_id = request.session.get('student_id')
+    student = get_object_or_404(Student, pk=student_id)
+    
+    # Get distinct exam names for this student's verified results
+    exam_names = Result.objects.filter(
+        student=student,
+        verification_status='Verified'
+    ).values_list('exam_name', flat=True).distinct().order_by('exam_name')
+    
+    selected_exam = request.GET.get('exam', '')
+    results = []
+    total_marks_obtained = 0
+    total_marks_total = 0
+    overall_percentage = 0
+    overall_grade = '-'
+    result_status = '-'
+    grade_config = GradeConfig.get_config()
+    
+    if selected_exam:
+        results = Result.objects.filter(
+            student=student,
+            exam_name=selected_exam,
+            verification_status='Verified'
+        ).select_related('subject').order_by('subject__subject_name')
+        
+        if results.exists():
+            total_marks_obtained = sum(r.marks_obtained for r in results)
+            total_marks_total = sum(r.total_marks for r in results)
+            overall_percentage = float((total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0)
+            overall_grade = grade_config.get_grade(overall_percentage)
+            result_status = 'PASS' if overall_percentage >= grade_config.pass_percentage else 'FAIL'
+    
+    context = {
+        'student': student,
+        'exam_names': exam_names,
+        'selected_exam': selected_exam,
+        'results': results,
+        'total_marks_obtained': total_marks_obtained,
+        'total_marks_total': total_marks_total,
+        'overall_percentage': overall_percentage,
+        'overall_grade': overall_grade,
+        'result_status': result_status,
+        'total_subjects': len(results) if results else 0,
+        'grade_config': grade_config,
+        'school_info': SchoolInfo.objects.first(),
+    }
+    return render(request, 'student/result_page.html', context)
+
+
+# ===================== ADMIN GRADE CONFIG =====================
+
+def admin_grade_config(request):
+    """Admin view to configure grade percentage criteria"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    config = GradeConfig.get_config()
+    
+    if request.method == 'POST':
+        try:
+            config.a_plus_min = int(request.POST.get('a_plus_min', 90))
+            config.a_min = int(request.POST.get('a_min', 80))
+            config.b_plus_min = int(request.POST.get('b_plus_min', 70))
+            config.b_min = int(request.POST.get('b_min', 60))
+            config.c_min = int(request.POST.get('c_min', 50))
+            config.d_min = int(request.POST.get('d_min', 40))
+            config.pass_percentage = int(request.POST.get('pass_percentage', 40))
+            config.save()
+            messages.success(request, 'Grade criteria updated successfully!')
+            return redirect('admin_grade_config')
+        except Exception as e:
+            messages.error(request, f'Error updating grade config: {str(e)}')
+    
+    return render(request, 'admin_portal/grade_config.html', {'config': config})
+
+
+# ===================== ADMIN STUDENT REGISTRATION PDF =====================
+
+def admin_student_registration_pdf(request, student_id):
+    """Admin view to generate professional registration PDF for a student"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    student = get_object_or_404(Student, pk=student_id)
+    school_info = SchoolInfo.objects.first()
+    
+    student_password = student.raw_password if (hasattr(student, 'raw_password') and student.raw_password) else 'student123'
+    
+    context = {
+        'student': student,
+        'school_info': school_info,
+        'student_code': f'MPS-{student.pk:04d}',
+        'login_email': student.email if student.email else f'student{student.pk}@midpoint.edu',
+        'raw_password': student_password,
+    }
+    return render(request, 'admin_portal/student_registration_pdf.html', context)

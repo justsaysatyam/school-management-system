@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Results - Mid Point School{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    <aside class="sidebar" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
+            </div>
+            <div>
+                <h2>Student Portal</h2><small style="opacity: 0.7;">{{ student.name }}</small>
+            </div>
+        </div>
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item"><a href="{% url 'student_dashboard' %}" class="nav-link"><span class="icon">📊</span> Dashboard</a></li>
+                <li class="nav-item"><a href="{% url 'student_result_page' %}" class="nav-link active"><span class="icon">📝</span> My Results</a></li>
+                <li class="nav-item"><a href="{% url 'student_payment_history' %}" class="nav-link"><span class="icon">💰</span> Payment History</a></li>
+                <li class="nav-item"><a href="{% url 'student_complaints' %}" class="nav-link"><span class="icon">📥</span> Complaint Box</a></li>
+                <li class="nav-item"><a href="{% url 'student_profile' %}" class="nav-link"><span class="icon">👤</span> My Profile</a></li>
+                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span class="icon">🚪</span> Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-header">
+            <div class="top-header-left">
+                <button class="mobile-sidebar-toggle" aria-label="Toggle Navigation">☰</button>
+                <h1 class="page-title">📝 My Examination Results</h1>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">{{ student.name|slice:":1"|upper }}</div>
+                <div><strong>{{ student.name }}</strong>
+                    <div style="font-size: 0.75rem; color: var(--gray-500);">{{ student.student_class }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exam Selector -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">🔍 Select Exam</h3>
+            </div>
+            <div style="padding: 1rem;">
+                <form method="get" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <select name="exam" class="form-input" style="min-width: 220px;">
+                        <option value="">-- Select Exam --</option>
+                        {% for exam in exam_names %}
+                        <option value="{{ exam }}" {% if exam == selected_exam %}selected{% endif %}>{{ exam }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">View Results</button>
+                    {% if selected_exam and results %}
+                    <a href="{% url 'student_result_pdf' student.pk %}?exam={{ selected_exam }}" 
+                       target="_blank"
+                       class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                       📥 Download PDF
+                    </a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        {% if selected_exam %}
+        {% if results %}
+
+        <!-- Subject-wise Marks Table -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">📊 Subject-wise Marks — {{ selected_exam }}</h3>
+            </div>
+            <div class="table-container" style="box-shadow: none;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Subject</th>
+                            <th>Marks Obtained</th>
+                            <th>Total Marks</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ result.subject.subject_name }}</strong><br>
+                                <small class="text-muted">{{ result.subject.subject_code }}</small></td>
+                            <td><strong>{{ result.marks_obtained|floatformat:0 }}</strong></td>
+                            <td>{{ result.total_marks|floatformat:0 }}</td>
+                            <td>
+                                <strong style="color: {% if result.percentage >= 60 %}#10b981{% elif result.percentage >= 40 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                    {{ result.percentage|floatformat:1 }}%
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="badge" style="
+                                    background: {% if result.grade == 'A+' %}#10b981{% elif result.grade == 'A' %}#3b82f6{% elif result.grade == 'B+' %}#8b5cf6{% elif result.grade == 'B' %}#f59e0b{% elif result.grade == 'C' %}#ef4444{% elif result.grade == 'D' %}#991b1b{% else %}#450a0a{% endif %};
+                                    color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700;">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if result.percentage >= grade_config.pass_percentage %}
+                                    <span class="badge badge-success">Pass</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Fail</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: linear-gradient(135deg, #f0f4ff, #e8ecff); font-weight: 700;">
+                            <td colspan="2" style="text-align: right; padding: 12px 14px;">TOTAL</td>
+                            <td style="padding: 12px 14px;">{{ total_marks_obtained|floatformat:0 }}</td>
+                            <td style="padding: 12px 14px;">{{ total_marks_total|floatformat:0 }}</td>
+                            <td style="padding: 12px 14px;"><strong>{{ overall_percentage|floatformat:2 }}%</strong></td>
+                            <td style="padding: 12px 14px;">
+                                <span class="badge" style="
+                                    background: {% if overall_grade == 'A+' %}#10b981{% elif overall_grade == 'A' %}#3b82f6{% elif overall_grade == 'B+' %}#8b5cf6{% elif overall_grade == 'B' %}#f59e0b{% elif overall_grade == 'C' %}#ef4444{% elif overall_grade == 'D' %}#991b1b{% else %}#450a0a{% endif %};
+                                    color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700;">
+                                    {{ overall_grade }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span class="badge {% if result_status == 'PASS' %}badge-success{% else %}badge-danger{% endif %}" style="font-size: 0.9rem;">
+                                    {{ result_status }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-content">
+                    <h3>Total Subjects</h3>
+                    <div class="stat-value">{{ total_subjects }}</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3>Marks Obtained</h3>
+                    <div class="stat-value">{{ total_marks_obtained|floatformat:0 }}/{{ total_marks_total|floatformat:0 }}</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <h3>Overall Percentage</h3>
+                    <div class="stat-value">{{ overall_percentage|floatformat:2 }}%</div>
+                </div>
+            </div>
+            <div class="stat-card {% if result_status == 'PASS' %}income{% else %}expense{% endif %}">
+                <div class="stat-icon">{% if result_status == 'PASS' %}🏆{% else %}❌{% endif %}</div>
+                <div class="stat-content">
+                    <h3>Result</h3>
+                    <div class="stat-value">{{ result_status }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div style="text-align: center; padding: 3rem 2rem; color: #888;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3 style="color: #ef4444; margin-bottom: 0.5rem;">No Results Found</h3>
+                <p>No verified results found for <strong>{{ selected_exam }}</strong>. Please check back later or contact your teacher.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card">
+            <div style="text-align: center; padding: 3rem 2rem; color: #888;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+                <h3>Select an Exam</h3>
+                <p>Please select an exam from the dropdown above to view your results.</p>
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+{% endblock %}

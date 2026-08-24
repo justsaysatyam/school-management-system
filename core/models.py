@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from decimal import Decimal
 
 
 class SchoolClass(models.Model):
@@ -96,11 +97,13 @@ class Student(models.Model):
     photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
     photo_filename = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128)
+    raw_password = models.CharField(max_length=128, blank=True, null=True, help_text='Plaintext password set by admin for registration certificate')
     is_active = models.BooleanField(default=True)
     photo_url = models.URLField(max_length=500, blank=True, null=True, help_text='External photo URL (optional, used if no uploaded photo)')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def set_password(self, raw_password):
+        self.raw_password = raw_password
         self.password = make_password(raw_password)
     
     def check_password(self, raw_password):
@@ -516,3 +519,46 @@ class ExamSchedule(models.Model):
 
     def __str__(self):
         return f"{self.subject} on {self.exam_date}"
+
+
+class GradeConfig(models.Model):
+    """Admin-configurable grade percentage criteria (singleton)"""
+    a_plus_min = models.IntegerField(default=90, help_text='Minimum % for A+ grade')
+    a_min = models.IntegerField(default=80, help_text='Minimum % for A grade')
+    b_plus_min = models.IntegerField(default=70, help_text='Minimum % for B+ grade')
+    b_min = models.IntegerField(default=60, help_text='Minimum % for B grade')
+    c_min = models.IntegerField(default=50, help_text='Minimum % for C grade')
+    d_min = models.IntegerField(default=40, help_text='Minimum % for D grade')
+    pass_percentage = models.IntegerField(default=40, help_text='Minimum % to PASS')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Grade Configuration"
+        verbose_name_plural = "Grade Configuration"
+
+    def __str__(self):
+        return f"Grade Config (Pass: {self.pass_percentage}%)"
+
+    @classmethod
+    def get_config(cls):
+        """Get or create the singleton GradeConfig instance"""
+        config, _ = cls.objects.get_or_create(pk=1)
+        return config
+
+    def get_grade(self, percentage):
+        """Calculate grade for a given percentage based on current config"""
+        pct = float(percentage)
+        if pct >= self.a_plus_min:
+            return 'A+'
+        elif pct >= self.a_min:
+            return 'A'
+        elif pct >= self.b_plus_min:
+            return 'B+'
+        elif pct >= self.b_min:
+            return 'B'
+        elif pct >= self.c_min:
+            return 'C'
+        elif pct >= self.d_min:
+            return 'D'
+        else:
+            return 'F'

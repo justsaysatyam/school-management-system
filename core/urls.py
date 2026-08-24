@@ -20,6 +20,7 @@ urlpatterns = [
     path('admin/students/<int:pk>/edit/', views.student_edit, name='student_edit'),
     path('admin/students/<int:pk>/delete/', views.student_delete, name='student_delete'),
     path('admin/students/<int:pk>/id-card/', views.student_id_card, name='student_id_card'),
+    path('admin/students/<int:student_id>/registration-pdf/', views.admin_student_registration_pdf, name='admin_student_registration_pdf'),
     path('admin/teachers/<int:pk>/id-card/', views.teacher_id_card, name='teacher_id_card'),
     
     # Teacher Management (Admin)
@@ -69,6 +70,8 @@ urlpatterns = [
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/payments/', views.student_payment_history, name='student_payment_history'),
     path('student/profile/', views.student_profile, name='student_profile'),
+    path('student/results/', views.student_result_page, name='student_result_page'),
+    path('student/results/pdf/<int:student_id>/', views.result_pdf, name='student_result_pdf'),
     
     # Teacher Portal
     path('teacher/dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
@@ -124,6 +127,9 @@ urlpatterns = [
     
     # Binary Serving
     path('serve-binary/<str:model_name>/<int:record_id>/<str:field_name>/', views.serve_binary, name='serve_binary'),
+    
+    # Grade Configuration (Admin)
+    path('admin/grade-config/', views.admin_grade_config, name='admin_grade_config'),
     
     # Health Check
     path('health-check/', views.health_check, name='health_check'),

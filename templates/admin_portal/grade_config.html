@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Grade Criteria Settings - Mid Point School{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'admin_portal/sidebar.html' %}
+    <main class="main-content">
+        <div class="top-header">
+            <h1 class="page-title">⚙️ Grade Criteria Settings</h1>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card" style="max-width: 700px;">
+            <div class="card-header">
+                <h3 class="card-title">📊 Grade Percentage Configuration</h3>
+            </div>
+            <div style="padding: 1.5rem;">
+                <p class="text-muted" style="margin-bottom: 1.5rem;">
+                    Yahan aap har grade ke liye minimum percentage set kar sakte hain. 
+                    Yeh settings result card aur grade calculation mein apply hongi.
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #10b981; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">A+</span>
+                                Minimum % for A+
+                            </label>
+                            <input type="number" name="a_plus_min" value="{{ config.a_plus_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.a_plus_min }}% and above</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">A</span>
+                                Minimum % for A
+                            </label>
+                            <input type="number" name="a_min" value="{{ config.a_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.a_min }}% to {{ config.a_plus_min|add:"-1" }}%</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">B+</span>
+                                Minimum % for B+
+                            </label>
+                            <input type="number" name="b_plus_min" value="{{ config.b_plus_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.b_plus_min }}% to {{ config.a_min|add:"-1" }}%</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #f59e0b; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">B</span>
+                                Minimum % for B
+                            </label>
+                            <input type="number" name="b_min" value="{{ config.b_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.b_min }}% to {{ config.b_plus_min|add:"-1" }}%</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #ef4444; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">C</span>
+                                Minimum % for C
+                            </label>
+                            <input type="number" name="c_min" value="{{ config.c_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.c_min }}% to {{ config.b_min|add:"-1" }}%</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span style="display: inline-block; background: #991b1b; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; margin-right: 8px;">D</span>
+                                Minimum % for D
+                            </label>
+                            <input type="number" name="d_min" value="{{ config.d_min }}" min="0" max="100" class="form-input" required>
+                            <small class="text-muted">Currently: {{ config.d_min }}% to {{ config.c_min|add:"-1" }}%</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="border-top: 2px solid #667eea; padding-top: 1.25rem; margin-top: 0.5rem;">
+                        <label class="form-label" style="font-size: 1rem;">
+                            <span style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 4px 14px; border-radius: 12px; font-weight: 700; margin-right: 8px;">PASS</span>
+                            Pass Minimum Percentage
+                        </label>
+                        <input type="number" name="pass_percentage" value="{{ config.pass_percentage }}" min="0" max="100" class="form-input" required style="max-width: 200px;">
+                        <small class="text-muted" style="display: block; margin-top: 4px;">
+                            Students scoring below this percentage will be marked FAIL. Currently: {{ config.pass_percentage }}%
+                        </small>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; display: flex; gap: 12px;">
+                        <button type="submit" class="btn btn-primary">💾 Save Grade Criteria</button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Grade Table Preview -->
+        <div class="card mt-3" style="max-width: 700px;">
+            <div class="card-header">
+                <h3 class="card-title">📋 Current Grade Scale</h3>
+            </div>
+            <div class="table-container" style="box-shadow: none;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Percentage Range</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span style="background: #10b981; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">A+</span></td>
+                            <td>{{ config.a_plus_min }}% – 100%</td>
+                            <td><span class="badge badge-success">Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #3b82f6; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">A</span></td>
+                            <td>{{ config.a_min }}% – {{ config.a_plus_min|add:"-1" }}%</td>
+                            <td><span class="badge badge-success">Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #8b5cf6; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">B+</span></td>
+                            <td>{{ config.b_plus_min }}% – {{ config.a_min|add:"-1" }}%</td>
+                            <td><span class="badge badge-success">Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #f59e0b; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">B</span></td>
+                            <td>{{ config.b_min }}% – {{ config.b_plus_min|add:"-1" }}%</td>
+                            <td><span class="badge badge-success">Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #ef4444; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">C</span></td>
+                            <td>{{ config.c_min }}% – {{ config.b_min|add:"-1" }}%</td>
+                            <td><span class="badge badge-success">Pass</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #991b1b; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">D</span></td>
+                            <td>{{ config.d_min }}% – {{ config.c_min|add:"-1" }}%</td>
+                            <td><span class="badge badge-{% if config.d_min >= config.pass_percentage %}success{% else %}danger{% endif %}">{% if config.d_min >= config.pass_percentage %}Pass{% else %}Fail{% endif %}</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="background: #450a0a; color: white; padding: 3px 14px; border-radius: 12px; font-weight: 700;">F</span></td>
+                            <td>Below {{ config.d_min }}%</td>
+                            <td><span class="badge badge-danger">Fail</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+{% endblock %}
