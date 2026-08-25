@@ -4,10 +4,10 @@ from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Not
 
 
 class LoginForm(forms.Form):
-    """Generic login form"""
-    email = forms.EmailField(widget=forms.EmailInput(attrs={
+    """Generic login form supporting either Email or Username"""
+    email = forms.CharField(label="Email or Username", widget=forms.TextInput(attrs={
         'class': 'form-input',
-        'placeholder': 'Enter your email'
+        'placeholder': 'Enter your username or email'
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
         'class': 'form-input',
