@@ -10,3 +10,6 @@ python manage.py collectstatic --noinput
 
 # Apply database migrations
 python manage.py migrate
+
+# Create default admin account (idempotent - safe to run every deploy)
+python manage.py create_default_admin
