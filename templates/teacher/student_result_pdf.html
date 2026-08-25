@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -331,24 +331,51 @@
         .signature-section {
             display: flex;
             justify-content: space-between;
-            padding: 30px 40px 20px;
+            padding: 24px 40px 16px;
         }
 
         .signature-block {
             text-align: center;
-            width: 30%;
+            width: 28%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .signature-img-box {
+            height: 46px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+
+        .sig-img {
+            max-height: 44px;
+            max-width: 140px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         .signature-line {
-            height: 35px;
+            width: 100%;
             border-bottom: 1.5px solid #333;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .signature-label {
             font-size: 0.75rem;
-            color: #555;
-            font-weight: 600;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .signature-name {
+            font-size: 0.68rem;
+            color: #666;
+            margin-top: 1px;
         }
 
         /* ---- Footer ---- */
@@ -585,16 +612,29 @@
         <!-- Signatures -->
         <div class="signature-section">
             <div class="signature-block">
+                <div class="signature-img-box">
+                    {% if class_teacher and class_teacher.signature_url or class_teacher and class_teacher.signature %}
+                        <img src="{% if class_teacher.signature_url %}{{ class_teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' class_teacher.id 'signature' %}{% endif %}" alt="Class Teacher Signature" class="sig-img">
+                    {% endif %}
+                </div>
                 <div class="signature-line"></div>
                 <div class="signature-label">Class Teacher</div>
+                {% if class_teacher %}<div class="signature-name">{{ class_teacher.name }}</div>{% endif %}
             </div>
             <div class="signature-block">
+                <div class="signature-img-box"></div>
                 <div class="signature-line"></div>
                 <div class="signature-label">Exam Controller</div>
             </div>
             <div class="signature-block">
+                <div class="signature-img-box">
+                    {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                        <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature" class="sig-img">
+                    {% endif %}
+                </div>
                 <div class="signature-line"></div>
                 <div class="signature-label">Principal</div>
+                {% if school_info and school_info.principal_name %}<div class="signature-name">{{ school_info.principal_name }}</div>{% endif %}
             </div>
         </div>
 

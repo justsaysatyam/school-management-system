@@ -135,6 +135,9 @@ urlpatterns = [
     # Grade Configuration (Admin)
     path('admin/grade-config/', views.admin_grade_config, name='admin_grade_config'),
     
+    # School Settings & Principal Signature (Admin)
+    path('admin/school-settings/', views.admin_school_settings, name='admin_school_settings'),
+    
     # Health Check
     path('health-check/', views.health_check, name='health_check'),
 ]

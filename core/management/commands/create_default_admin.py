@@ -1,7 +1,7 @@
 """
 Management command: create_default_admin
-Idempotently creates the default admin account on any environment (local/production).
-Safe to run multiple times - will update password if user already exists.
+Idempotently creates/updates the default admin accounts on any environment (local/production).
+Safe to run multiple times - will update passwords and telegram_chat_ids.
 
 Usage:
     python manage.py create_default_admin
@@ -12,62 +12,96 @@ from django.contrib.auth.models import User
 from core.models import Admin, AdminProfile
 
 
+ADMIN_ACCOUNTS = [
+    {
+        'username': 'admin',
+        'email': 'admin@midpoint.com',
+        'password': 'admin123',
+        'name': 'Administrator',
+        'telegram_chat_id': '5215400355',
+    },
+    {
+        'username': 'Bhanu_admin',
+        'email': 'bhanu@midpointschool.online',
+        'password': 'admin@123',
+        'name': 'Bhanu Kumar Singh',
+        'telegram_chat_id': '1949979666',
+    },
+]
+
+
 class Command(BaseCommand):
-    help = "Create or update the default Bhanu_admin account (idempotent)"
+    help = "Create or update permanent admin accounts with Telegram 2FA chat IDs (idempotent)"
 
     def handle(self, *args, **options):
-        # Credentials (can be overridden via environment variables)
-        username = os.environ.get('DEFAULT_ADMIN_USERNAME', 'Bhanu_admin')
-        password = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin@123')
-        email    = os.environ.get('DEFAULT_ADMIN_EMAIL',    'bhanu@midpointschool.online')
-        name     = os.environ.get('DEFAULT_ADMIN_NAME',     'Bhanu Kumar Singh')
+        self.stdout.write(self.style.NOTICE("Seeding permanent admin accounts..."))
 
-        # Step 1: Create / update Django User
-        user, created = User.objects.get_or_create(username=username)
-        user.set_password(password)
-        user.email        = email
-        user.first_name   = name.split()[0]
-        user.last_name    = ' '.join(name.split()[1:])
-        user.is_staff     = True
-        user.is_superuser = True
-        user.save()
+        for acc in ADMIN_ACCOUNTS:
+            username = acc['username']
+            email = acc['email']
+            password = acc['password']
+            name = acc['name']
+            telegram_chat_id = acc['telegram_chat_id']
 
-        action = "Created" if created else "Updated"
-        self.stdout.write(self.style.SUCCESS(
-            "[OK] Django User {}: username={}, email={}".format(action, username, email)
-        ))
+            # 1. Create or update Django User by username or email
+            user = User.objects.filter(username=username).first()
+            if not user:
+                user = User.objects.filter(email=email).first()
 
-        # Step 2: Ensure AdminProfile exists for 2FA
-        profile, _ = AdminProfile.objects.get_or_create(user=user)
-        self.stdout.write(self.style.SUCCESS(
-            "[OK] AdminProfile ready | telegram_chat_id={}".format(
-                profile.telegram_chat_id or 'Not linked yet'
+            if not user:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                )
+                action = "Created"
+            else:
+                user.username = username
+                user.email = email
+                user.set_password(password)
+                action = "Updated"
+
+            user.first_name = name.split()[0]
+            user.last_name = ' '.join(name.split()[1:]) if len(name.split()) > 1 else ''
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+
+            self.stdout.write(self.style.SUCCESS(
+                f"[OK] Django User {action}: username={username}, email={email}"
+            ))
+
+            # 2. Ensure AdminProfile exists and set permanent Telegram Chat ID
+            profile, _ = AdminProfile.objects.get_or_create(user=user)
+            profile.telegram_chat_id = telegram_chat_id
+            profile.save()
+
+            self.stdout.write(self.style.SUCCESS(
+                f"[OK] AdminProfile linked: telegram_chat_id={profile.telegram_chat_id}"
+            ))
+
+            # 3. Create or update legacy Admin model entry
+            admin_entry, admin_created = Admin.objects.get_or_create(
+                email=email,
+                defaults={
+                    'name': name,
+                    'phone': '',
+                    'role': 'Administrator',
+                }
             )
-        ))
+            admin_entry.name = name
+            admin_entry.set_password(password)
+            admin_entry.save()
 
-        # Step 3: Create / update legacy Admin model entry
-        admin, admin_created = Admin.objects.get_or_create(
-            email=email,
-            defaults={
-                'name': name,
-                'phone': '',
-                'role': 'Administrator',
-            }
-        )
-        admin.name = name
-        admin.set_password(password)
-        admin.save()
-
-        admin_action = "Created" if admin_created else "Updated"
-        self.stdout.write(self.style.SUCCESS(
-            "[OK] Admin entry {}: email={}".format(admin_action, email)
-        ))
+            admin_action = "Created" if admin_created else "Updated"
+            self.stdout.write(self.style.SUCCESS(
+                f"[OK] Legacy Admin entry {admin_action}: email={email}"
+            ))
 
         self.stdout.write(self.style.SUCCESS(
             "\n========================================\n"
-            " Admin account ready!\n"
-            "   Username : {}\n"
-            "   Password : {}\n"
-            "   Login at : /admin-login/\n"
-            "========================================".format(username, password)
+            " All Admin accounts permanently ready!\n"
+            " Admin 1: admin@midpoint.com (Chat ID: 5215400355)\n"
+            " Admin 2: bhanu@midpointschool.online (Chat ID: 1949979666)\n"
+            "========================================"
         ))

@@ -111,3 +111,120 @@ class AdminAuthTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Invalid password')
+
+
+class DigitalSignatureTestCase(TestCase):
+    """Test suite for Principal and Teacher digital signature features and auto-fill resolution"""
+
+    def setUp(self):
+        from core.models import SchoolClass, Teacher, Student, SchoolInfo
+        from datetime import date
+        self.client = Client()
+
+        # Create SchoolInfo
+        self.school_info = SchoolInfo.objects.create(
+            school_name="Mid Point School",
+            principal_name="Raja Ram Kumar",
+            principal_signature_url="https://example.com/principal_sig.png"
+        )
+
+        # Create School Class
+        self.school_class = SchoolClass.objects.create(
+            class_name="10",
+            section="A",
+            strength=40
+        )
+
+        # Create Teacher 1 (without signature)
+        self.teacher1 = Teacher.objects.create(
+            name="Teacher One",
+            email="teacher1@test.com",
+            mobile="9876543211",
+            joining_date=date(2024, 1, 1),
+            monthly_salary=25000,
+        )
+        self.teacher1.set_password("pass123")
+        self.teacher1.save()
+        self.teacher1.class_section.add(self.school_class)
+
+        # Create Teacher 2 (with signature)
+        self.teacher2 = Teacher.objects.create(
+            name="Teacher Two",
+            email="teacher2@test.com",
+            mobile="9876543212",
+            joining_date=date(2024, 1, 2),
+            monthly_salary=26000,
+            signature_url="https://example.com/teacher2_sig.png"
+        )
+        self.teacher2.set_password("pass123")
+        self.teacher2.save()
+        self.teacher2.class_section.add(self.school_class)
+
+        # Create Student in this class
+        self.student = Student.objects.create(
+            name="Rahul Sharma",
+            father_name="Suresh Sharma",
+            student_class=self.school_class,
+            mobile="9876543210",
+            admission_date=date(2024, 1, 1),
+            monthly_fee=1500,
+        )
+        self.student.set_password("stud123")
+        self.student.save()
+
+    def test_class_teacher_multi_resolution_picks_first_with_signature(self):
+        """When a class has multiple teachers, get_class_teacher_for_student should pick the teacher who uploaded signature."""
+        from core.views import get_class_teacher_for_student
+        resolved_teacher = get_class_teacher_for_student(self.student)
+        self.assertIsNotNone(resolved_teacher)
+        self.assertEqual(resolved_teacher.pk, self.teacher2.pk)
+        self.assertEqual(resolved_teacher.name, "Teacher Two")
+
+    def test_admin_school_settings_view_accessible_by_admin(self):
+        """Admin can access /admin/school-settings/ page."""
+        session = self.client.session
+        session['user_type'] = 'admin'
+        session.save()
+
+        response = self.client.get(reverse('admin_school_settings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Principal Digital Signature')
+
+    def test_teacher_profile_signature_upload(self):
+        """Teacher can update their digital signature URL from profile."""
+        session = self.client.session
+        session['user_type'] = 'teacher'
+        session['teacher_id'] = self.teacher1.id
+        session.save()
+
+        response = self.client.post(reverse('teacher_profile'), {
+            'signature_url': 'https://example.com/teacher1_sig.png'
+        })
+        self.assertRedirects(response, reverse('teacher_profile'))
+        self.teacher1.refresh_from_db()
+        self.assertEqual(self.teacher1.signature_url, 'https://example.com/teacher1_sig.png')
+
+    def test_serve_binary_redirects_for_signature_urls(self):
+        """serve_binary redirects to external signature URL if set."""
+        # Principal signature
+        response = self.client.get(
+            reverse('serve_binary', kwargs={
+                'model_name': 'SchoolInfo',
+                'record_id': self.school_info.id,
+                'field_name': 'principal_signature'
+            })
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://example.com/principal_sig.png")
+
+        # Teacher signature
+        response = self.client.get(
+            reverse('serve_binary', kwargs={
+                'model_name': 'Teacher',
+                'record_id': self.teacher2.id,
+                'field_name': 'signature'
+            })
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://example.com/teacher2_sig.png")
+

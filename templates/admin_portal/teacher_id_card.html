@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -222,13 +222,31 @@
 
         .signature {
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sig-img-box {
+            height: 28px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .sig-img-box img {
+            max-height: 26px;
+            max-width: 90px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         .sig-line {
             width: 100px;
             height: 1px;
             background: #d1d5db;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .sig-text {
@@ -379,12 +397,22 @@
             </div>
             <div class="card-footer">
                 <div class="signature">
+                    <div class="sig-img-box">
+                        {% if teacher.signature_url or teacher.signature %}
+                            <img src="{% if teacher.signature_url %}{{ teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' teacher.id 'signature' %}{% endif %}" alt="Teacher Signature">
+                        {% endif %}
+                    </div>
                     <div class="sig-line"></div>
                     <div class="sig-text">Employee Signature</div>
                 </div>
                 <div class="signature">
+                    <div class="sig-img-box">
+                        {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                            <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature">
+                        {% endif %}
+                    </div>
                     <div class="sig-line"></div>
-                    <div class="sig-text">Director Approval</div>
+                    <div class="sig-text">Director / Principal</div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}School Settings & Principal Signature - Mid Point School{% endblock %}
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'admin_portal/sidebar.html' %}
+    <main class="main-content">
+        <div class="top-header">
+            <div>
+                <h1 class="page-title">✍️ School Settings & Principal Signature</h1>
+                <p class="text-muted">Manage school details, official logo, and Principal's digital signature for PDF autofill.</p>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} mb-4">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if form.errors %}
+        <div class="alert alert-error mb-4" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px 16px; border-radius: 8px;">
+            <strong>⚠️ Form Errors:</strong>
+            <ul style="margin: 6px 0 0 20px; padding: 0;">
+                {% for field, errors in form.errors.items %}
+                    <li><strong>{{ field|capfirst }}:</strong> {{ errors|join:", " }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="grid-2 mb-4">
+                <!-- Principal Digital Signature Card -->
+                <div class="card" style="border: 2px solid #3b82f6; background: #ffffff;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; border-radius: 8px 8px 0 0; padding: 1rem 1.25rem;">
+                        <h3 class="card-title" style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <span>✍️</span> Principal Digital Signature
+                        </h3>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <div class="alert alert-info mb-3" style="font-size: 0.88rem; line-height: 1.5; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 10px 14px;">
+                            <strong>ℹ️ Auto-Fill Feature:</strong> Yahan Principal ka digital signature upload karein. Yeh signature sabhi official PDFs mein auto-fill ho jayega:
+                            <ul style="margin: 6px 0 0 16px; padding: 0;">
+                                <li>📄 <strong>Result PDF / Card</strong></li>
+                                <li>🧾 <strong>Fee Receipt PDF</strong></li>
+                                <li>🎫 <strong>Admit Card PDF</strong></li>
+                                <li>📋 <strong>Student Registration Certificate PDF</strong></li>
+                                <li>🪪 <strong>ID Cards</strong></li>
+                            </ul>
+                        </div>
+
+                        <!-- Current Signature Preview -->
+                        <div class="form-group mb-3">
+                            <label class="form-label font-bold" style="font-weight: 600;">Current Principal Signature:</label>
+                            <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 1.25rem; text-align: center; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                {% if school_info.principal_signature_url or school_info.principal_signature %}
+                                    <div style="display: inline-block; background: #ffffff; padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                        <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" 
+                                             alt="Principal Signature" 
+                                             style="max-height: 80px; max-width: 240px; object-fit: contain;">
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 6px;">
+                                        Principal: <strong>{{ school_info.principal_name }}</strong>
+                                    </div>
+                                {% else %}
+                                    <div style="color: #94a3b8; font-size: 0.9rem;">
+                                        <span style="font-size: 2rem; display: block; margin-bottom: 4px;">🖊️</span>
+                                        No Principal signature uploaded yet.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Upload New Signature -->
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold" for="id_principal_signature">Upload New Signature (PNG / JPG / WebP):</label>
+                            {{ form.principal_signature }}
+                            <small class="text-muted" style="display: block; margin-top: 4px;">
+                                Transparent background PNG recommended for clear PDF embedding.
+                            </small>
+                            {% if form.principal_signature.errors %}
+                            <div class="text-danger" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px;">{{ form.principal_signature.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- External Signature URL -->
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold" for="id_principal_signature_url">Or Signature Image URL (Optional):</label>
+                            {{ form.principal_signature_url }}
+                            {% if form.principal_signature_url.errors %}
+                            <div class="text-danger" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px;">{{ form.principal_signature_url.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Remove Signature Option -->
+                        {% if school_info.principal_signature_url or school_info.principal_signature %}
+                        <div style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #dc2626; cursor: pointer;">
+                                <input type="checkbox" name="remove_signature" value="true">
+                                <span>Remove current Principal signature</span>
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- School Logo & Officials -->
+                <div class="card">
+                    <div class="card-header" style="background: linear-gradient(135deg, #475569, #64748b); color: white; border-radius: 8px 8px 0 0; padding: 1rem 1.25rem;">
+                        <h3 class="card-title" style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <span>🏫</span> School Logo & Key Officials
+                        </h3>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <!-- Current Logo -->
+                        <div class="form-group mb-3">
+                            <label class="form-label font-bold" style="font-weight: 600;">Current School Logo:</label>
+                            <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 1rem; text-align: center;">
+                                {% if school_info.logo %}
+                                    <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" 
+                                         alt="School Logo" 
+                                         style="max-height: 80px; max-width: 160px; object-fit: contain; border-radius: 6px;">
+                                {% else %}
+                                    <img src="{% static 'images/logo.png' %}" alt="Default Logo" style="max-height: 70px;">
+                                    <small class="text-muted" style="display: block; margin-top: 4px;">Default Static Logo</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold" for="id_logo">Upload New School Logo:</label>
+                            {{ form.logo }}
+                            {% if form.logo.errors %}
+                            <div class="text-danger" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px;">{{ form.logo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold">Principal Name (appears under signature):</label>
+                            {{ form.principal_name }}
+                            {% if form.principal_name.errors %}
+                            <div class="text-danger" style="color: #ef4444; font-size: 0.85rem;">{{ form.principal_name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold">Director Name:</label>
+                            {{ form.director_name }}
+                            {% if form.director_name.errors %}
+                            <div class="text-danger" style="color: #ef4444; font-size: 0.85rem;">{{ form.director_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- School Profile Information Card -->
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; border-radius: 8px 8px 0 0; padding: 1rem 1.25rem;">
+                    <h3 class="card-title" style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span> School Details & Contact Information
+                    </h3>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div class="grid-2" style="gap: 1.25rem;">
+                        <div class="form-group">
+                            <label class="form-label font-semibold">School Name</label>
+                            {{ form.school_name }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold">School Motto</label>
+                            {{ form.motto }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold">Contact Phone Number</label>
+                            {{ form.contact_number }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold">Official Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold">Established Year</label>
+                            {{ form.established_year }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold">Address (printed on receipts and PDFs)</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label font-semibold">About / Description</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding-bottom: 2rem;">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline" style="padding: 10px 24px; text-decoration: none;">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="padding: 10px 28px; font-weight: 600; font-size: 1rem; background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">
+                    💾 Save School Settings & Signature
+                </button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}

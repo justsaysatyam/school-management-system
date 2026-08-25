@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -210,25 +210,44 @@
             display: flex;
             justify-content: space-between;
             margin-top: auto;
-            padding-top: 15px;
+            padding-top: 10px;
             border-top: 1px dashed #ccc;
         }
 
         .signature-box {
             text-align: center;
             width: 45%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .signature-img-box {
+            height: 32px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .signature-img-box img {
+            max-height: 30px;
+            max-width: 100px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         .signature-line {
-            height: 40px;
+            width: 100%;
             border-bottom: 1px solid #333;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .signature-label {
             font-size: 0.7rem;
-            color: #555;
-            font-weight: 600;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .validity {
@@ -358,10 +377,16 @@
 
                     <div class="signatures">
                         <div class="signature-box">
+                            <div class="signature-img-box">
+                                {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                                    <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature">
+                                {% endif %}
+                            </div>
                             <div class="signature-line"></div>
                             <div class="signature-label">Principal</div>
                         </div>
                         <div class="signature-box">
+                            <div class="signature-img-box"></div>
                             <div class="signature-line"></div>
                             <div class="signature-label">Director</div>
                         </div>

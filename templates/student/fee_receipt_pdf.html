@@ -185,18 +185,46 @@
 
         .signature-area {
             text-align: center;
-            width: 200px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .signature-img-box {
+            height: 48px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+
+        .sig-img {
+            max-height: 46px;
+            max-width: 160px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         .sig-line {
-            border-top: 1px solid #333;
-            margin-bottom: 10px;
+            width: 100%;
+            border-top: 1.5px solid #333;
+            margin-bottom: 4px;
         }
 
         .sig-label {
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #333;
+        }
+
+        .sig-name {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
         }
 
         .note {
@@ -372,8 +400,14 @@
                     payment.</p>
             </div>
             <div class="signature-area">
+                <div class="signature-img-box">
+                    {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                        <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature" class="sig-img">
+                    {% endif %}
+                </div>
                 <div class="sig-line"></div>
-                <p class="sig-label">Accountant/Cashier</p>
+                <p class="sig-label">Authorized Signatory</p>
+                {% if school_info and school_info.principal_name %}<div class="sig-name">{{ school_info.principal_name }} (Principal)</div>{% endif %}
             </div>
         </div>
     </div>

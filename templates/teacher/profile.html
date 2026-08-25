@@ -3,45 +3,146 @@
 {% block title %}Teacher Profile - Mid Point School{% endblock %}
 {% block body %}
 <div class="dashboard-layout">
-    <aside class="sidebar" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);">
-        <div class="sidebar-brand">
-            <div class="brand-icon">
-                <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: auto;">
-            </div>
-            <div>
-                <h2>Teacher Portal</h2>
-            </div>
-        </div>
-        <nav>
-            <ul class="sidebar-nav">
-                <li class="nav-item"><a href="{% url 'teacher_dashboard' %}" class="nav-link"><span
-                            class="icon">📊</span> Dashboard</a></li>
-                <li class="nav-item"><a href="{% url 'teacher_salary_history' %}" class="nav-link"><span
-                            class="icon">💵</span> Salary History</a></li>
-                <li class="nav-item"><a href="{% url 'teacher_students' %}" class="nav-link"><span
-                            class="icon">🎓</span> Students</a></li>
-                <li class="nav-item"><a href="{% url 'teacher_profile' %}" class="nav-link active"><span
-                            class="icon">👤</span> My Profile</a></li>
-                <li class="nav-item" style="margin-top: 2rem;"><a href="{% url 'logout' %}" class="nav-link"><span
-                            class="icon">🚪</span> Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
+    {% include 'teacher/sidebar.html' %}
     <main class="main-content">
         <div class="top-header">
-            <h1 class="page-title">👤 My Profile</h1>
+            <div>
+                <h1 class="page-title">👤 My Profile</h1>
+                <p class="text-muted">Manage your personal information and digital signature.</p>
+            </div>
         </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} mb-4">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="grid-2 mb-4">
+            <!-- Digital Signature Card -->
+            <div class="card" style="border: 2px solid #8b5cf6; background: #ffffff;">
+                <div class="card-header" style="background: linear-gradient(135deg, #6d28d9, #8b5cf6); color: white; border-radius: 8px 8px 0 0; padding: 1rem 1.25rem;">
+                    <h3 class="card-title" style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>✍️</span> My Digital Signature
+                    </h3>
+                </div>
+                <div style="padding: 1.25rem;">
+                    <div class="alert alert-info mb-3" style="font-size: 0.88rem; line-height: 1.5; background: #f5f3ff; border: 1px solid #ddd6fe; color: #5b21b6; border-radius: 8px; padding: 10px 14px;">
+                        <strong>ℹ️ Auto-Fill Feature:</strong> Apna signature upload karein. Jab aapki class ke students ka <strong>Result PDF</strong> ya <strong>Admit Card</strong> generate hoga, toh Class Teacher section mein aapka signature <strong>auto-fill</strong> ho jayega!
+                    </div>
+
+                    <!-- Current Signature Preview -->
+                    <div class="form-group mb-3">
+                        <label class="form-label" style="font-weight: 600;">Current Signature:</label>
+                        <div style="background: #faf5ff; border: 2px dashed #c4b5fd; border-radius: 8px; padding: 1.25rem; text-align: center; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            {% if teacher.signature_url or teacher.signature %}
+                                <div style="display: inline-block; background: #ffffff; padding: 8px 16px; border: 1px solid #e9d5ff; border-radius: 6px; box-shadow: 0 2px 4px rgba(139,92,246,0.1);">
+                                    <img src="{% if teacher.signature_url %}{{ teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' teacher.id 'signature' %}{% endif %}" 
+                                         alt="Teacher Signature" 
+                                         style="max-height: 80px; max-width: 220px; object-fit: contain;">
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7c3aed; margin-top: 6px;">
+                                    Teacher: <strong>{{ teacher.name }}</strong>
+                                </div>
+                            {% else %}
+                                <div style="color: #a78bfa; font-size: 0.9rem;">
+                                    <span style="font-size: 2rem; display: block; margin-bottom: 4px;">🖊️</span>
+                                    No signature uploaded yet.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Signature Upload Form -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold" for="id_signature">Upload New Signature (PNG / JPG):</label>
+                            {{ form.signature }}
+                            <small class="text-muted" style="display: block; margin-top: 4px;">
+                                Transparent background PNG image is recommended.
+                            </small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="form-label font-semibold" for="id_signature_url">Or Direct Signature URL (Optional):</label>
+                            {{ form.signature_url }}
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+                            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); border: none; padding: 8px 20px; font-weight: 600;">
+                                💾 Save Signature
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if teacher.signature_url or teacher.signature %}
+                    <form method="post" style="margin-top: 12px; border-top: 1px solid #f3e8ff; padding-top: 10px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="remove_signature" value="true">
+                        <button type="submit" class="btn btn-sm btn-outline" style="color: #dc2626; border-color: #fca5a5; font-size: 0.82rem;" onclick="return confirm('Are you sure you want to remove your digital signature?');">
+                            🗑️ Remove Signature
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Overview & Photo -->
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #1e293b, #334155); color: white; border-radius: 8px 8px 0 0; padding: 1rem 1.25rem;">
+                    <h3 class="card-title" style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span>👨‍🏫</span> Profile Photo & Summary
+                    </h3>
+                </div>
+                <div style="padding: 1.25rem; text-align: center;">
+                    <div style="margin-bottom: 1rem;">
+                        {% if teacher.photo_url or teacher.photo %}
+                            <img src="{% if teacher.photo_url %}{{ teacher.photo_url }}{% else %}{% url 'serve_binary' 'Teacher' teacher.id 'photo' %}{% endif %}" 
+                                 alt="{{ teacher.name }}" 
+                                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #ede9fe; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        {% else %}
+                            <div style="width: 120px; height: 120px; border-radius: 50%; background: #ede9fe; color: #7c3aed; display: inline-flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; border: 4px solid #ddd6fe;">
+                                {{ teacher.name|make_list|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h2 style="margin: 0; font-size: 1.35rem; color: #1e293b;">{{ teacher.name }}</h2>
+                    <p class="text-muted" style="margin-top: 2px;">{{ teacher.role|default:"Teacher" }} &bull; {{ teacher.qualification|default:"Faculty" }}</p>
+                    
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; margin-top: 15px; text-align: left; font-size: 0.9rem;">
+                        <div style="margin-bottom: 6px;"><strong>Class Teacher:</strong> 
+                            {% for cls in teacher.class_section.all %}
+                                <span class="badge" style="background: #ede9fe; color: #7c3aed; padding: 3px 10px; border-radius: 12px; font-weight: 600;">{{ cls }}</span>
+                            {% empty %}
+                                <span class="text-muted">Not assigned</span>
+                            {% endfor %}
+                        </div>
+                        <div><strong>Subjects:</strong>
+                            {% for subj in teacher.subjects.all %}
+                                <span class="badge" style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-weight: 600;">{{ subj.subject_name }}</span>
+                            {% empty %}
+                                <span class="text-muted">General</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid-2">
             <div class="card">
-                <h3 class="card-title mb-3">Personal Information</h3>
-                <div class="form-group"><label class="form-label">Name</label>
+                <h3 class="card-title mb-3" style="font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">📋 Personal Information</h3>
+                <div class="form-group"><label class="form-label">Full Name</label>
                     <p><strong>{{ teacher.name }}</strong></p>
                 </div>
                 <div class="form-group"><label class="form-label">Father's Name</label>
                     <p>{{ teacher.father_name|default:"-" }}</p>
                 </div>
-                <div class="form-group"><label class="form-label">Role</label>
-                    <p>{{ teacher.role }}</p>
+                <div class="form-group"><label class="form-label">Aadhar Number</label>
+                    <p>{{ teacher.aadhar_no|default:"-" }}</p>
                 </div>
                 <div class="form-group"><label class="form-label">Qualification</label>
                     <p>{{ teacher.qualification|default:"-" }}</p>
@@ -51,7 +152,7 @@
                 </div>
             </div>
             <div class="card">
-                <h3 class="card-title mb-3">Contact & Employment</h3>
+                <h3 class="card-title mb-3" style="font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">📞 Contact & Employment</h3>
                 <div class="form-group"><label class="form-label">Email</label>
                     <p>{{ teacher.email }}</p>
                 </div>
@@ -62,10 +163,7 @@
                     <p>{{ teacher.address|default:"-" }}</p>
                 </div>
                 <div class="form-group"><label class="form-label">Monthly Salary</label>
-                    <p class="text-success"><strong>₹{{ teacher.monthly_salary }}</strong></p>
-                </div>
-                <div class="form-group"><label class="form-label">Class Teacher</label>
-                    <p>{% for cls in teacher.class_section.all %}{{ cls }}{% if not forloop.last %}, {% endif %}{% empty %}Not assigned{% endfor %}</p>
+                    <p class="text-success" style="font-size: 1.1rem;"><strong>₹{{ teacher.monthly_salary }}</strong></p>
                 </div>
             </div>
         </div>

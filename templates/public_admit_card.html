@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 {% load static %}
 <html lang="en">
 <head>
@@ -229,23 +229,51 @@
         .signatures {
             display: flex;
             justify-content: space-between;
-            margin-top: 60px;
+            margin-top: 35px;
         }
 
         .sign-box {
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 170px;
+        }
+
+        .sign-img-box {
+            height: 45px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+
+        .sign-img {
+            max-height: 44px;
+            max-width: 140px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         .sign-line {
-            width: 150px;
-            border-top: 1px solid var(--text-dark);
-            margin-bottom: 5px;
+            width: 100%;
+            border-top: 1.5px solid var(--text-dark);
+            margin-bottom: 4px;
         }
 
         .sign-label {
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sign-name {
+            font-size: 11px;
             color: var(--text-muted);
+            margin-top: 1px;
         }
 
         @media screen and (max-width: 768px) {
@@ -395,16 +423,29 @@
             <!-- Signatures -->
             <div class="signatures">
                 <div class="sign-box">
+                    <div class="sign-img-box"></div>
                     <div class="sign-line"></div>
                     <div class="sign-label">Student's Signature</div>
                 </div>
                 <div class="sign-box">
+                    <div class="sign-img-box">
+                        {% if class_teacher and class_teacher.signature_url or class_teacher and class_teacher.signature %}
+                            <img src="{% if class_teacher.signature_url %}{{ class_teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' class_teacher.id 'signature' %}{% endif %}" alt="Class Teacher Signature" class="sign-img">
+                        {% endif %}
+                    </div>
                     <div class="sign-line"></div>
                     <div class="sign-label">Class Teacher</div>
+                    {% if class_teacher %}<div class="sign-name">{{ class_teacher.name }}</div>{% endif %}
                 </div>
                 <div class="sign-box">
+                    <div class="sign-img-box">
+                        {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                            <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature" class="sign-img">
+                        {% endif %}
+                    </div>
                     <div class="sign-line"></div>
                     <div class="sign-label">Principal</div>
+                    {% if school_info and school_info.principal_name %}<div class="sign-name">{{ school_info.principal_name }}</div>{% endif %}
                 </div>
             </div>
 

@@ -1,6 +1,6 @@
 from django import forms
 import re
-from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Notice, Event, SchoolClass, Subject, Complaint, Inquiry
+from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Notice, Event, SchoolClass, Subject, Complaint, Inquiry, SchoolInfo
 
 
 class LoginForm(forms.Form):
@@ -104,6 +104,14 @@ class TeacherForm(forms.ModelForm):
             'placeholder': 'https://example.com/photo.jpg  (optional)'
         })
     )
+    signature = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-input'}))
+    signature_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://example.com/signature.png (optional)'
+        })
+    )
     
     class Meta:
         model = Teacher
@@ -130,20 +138,150 @@ class TeacherForm(forms.ModelForm):
         photo_url = self.cleaned_data.get('photo_url')
         photo = self.cleaned_data.get('photo')
         if photo_url:
-            # URL provided — save URL, clear binary photo
             instance.photo_url = photo_url
             instance.photo = None
             instance.photo_mimetype = None
             instance.photo_filename = None
         elif photo and hasattr(photo, 'read'):
-            # File uploaded — save binary, clear URL
             instance.photo = photo.read()
             instance.photo_mimetype = photo.content_type
             instance.photo_filename = photo.name
             instance.photo_url = None
+
+        signature_url = self.cleaned_data.get('signature_url')
+        signature = self.cleaned_data.get('signature')
+        if signature_url:
+            instance.signature_url = signature_url
+            instance.signature = None
+            instance.signature_mimetype = None
+            instance.signature_filename = None
+        elif signature and hasattr(signature, 'read'):
+            instance.signature = signature.read()
+            instance.signature_mimetype = signature.content_type
+            instance.signature_filename = signature.name
+            instance.signature_url = None
+
         if commit:
             instance.save()
             self._save_m2m()
+        return instance
+
+
+class TeacherSignatureForm(forms.Form):
+    """Form for teachers to upload/update their digital signature from profile"""
+    signature = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        }),
+        help_text="Upload your digital signature image (transparent PNG or JPG recommended)."
+    )
+    signature_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://example.com/my-signature.png (optional)'
+        }),
+        help_text="Or provide a direct image link to your digital signature."
+    )
+    remove_signature = forms.BooleanField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+
+
+class SchoolSettingsForm(forms.ModelForm):
+    """Form for admin to manage school profile, logo, and Principal signature"""
+    logo = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        })
+    )
+    principal_signature = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        }),
+        help_text="Upload Principal's digital signature (transparent PNG recommended for PDFs)."
+    )
+    principal_signature_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://example.com/principal_signature.png (optional)'
+        }),
+        help_text="Or direct URL to Principal's signature."
+    )
+    remove_signature = forms.BooleanField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+
+    class Meta:
+        model = SchoolInfo
+        fields = [
+            'school_name', 'address', 'contact_number', 'email',
+            'principal_name', 'director_name', 'motto', 'description',
+            'established_year', 'total_students', 'total_teachers'
+        ]
+        widgets = {
+            'school_name': forms.TextInput(attrs={'class': 'form-input'}),
+            'address': forms.Textarea(attrs={'class': 'form-input', 'rows': 2}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-input'}),
+            'email': forms.EmailInput(attrs={'class': 'form-input'}),
+            'principal_name': forms.TextInput(attrs={'class': 'form-input'}),
+            'director_name': forms.TextInput(attrs={'class': 'form-input'}),
+            'motto': forms.TextInput(attrs={'class': 'form-input'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
+            'established_year': forms.NumberInput(attrs={'class': 'form-input'}),
+            'total_students': forms.NumberInput(attrs={'class': 'form-input'}),
+            'total_teachers': forms.NumberInput(attrs={'class': 'form-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields flexible so missing fields don't block signature upload
+        for name, field in self.fields.items():
+            if name != 'school_name':
+                field.required = False
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Logo handling
+        logo = self.cleaned_data.get('logo')
+        if logo and hasattr(logo, 'read'):
+            instance.logo = logo.read()
+            instance.logo_mimetype = getattr(logo, 'content_type', 'image/png')
+            instance.logo_filename = getattr(logo, 'name', 'school_logo.png')
+
+        # Principal signature handling
+        remove_sig = self.cleaned_data.get('remove_signature')
+        if remove_sig:
+            instance.principal_signature = None
+            instance.principal_signature_mimetype = None
+            instance.principal_signature_filename = None
+            instance.principal_signature_url = None
+        else:
+            sig_url = self.cleaned_data.get('principal_signature_url')
+            sig_file = self.cleaned_data.get('principal_signature')
+            if sig_url:
+                instance.principal_signature_url = sig_url
+                instance.principal_signature = None
+                instance.principal_signature_mimetype = None
+                instance.principal_signature_filename = None
+            elif sig_file and hasattr(sig_file, 'read'):
+                instance.principal_signature = sig_file.read()
+                instance.principal_signature_mimetype = getattr(sig_file, 'content_type', 'image/png')
+                instance.principal_signature_filename = getattr(sig_file, 'name', 'principal_signature.png')
+                instance.principal_signature_url = None
+
+        if commit:
+            instance.save()
         return instance
 
 

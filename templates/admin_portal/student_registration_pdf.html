@@ -322,13 +322,43 @@
         .signature-section {
             display: flex;
             justify-content: space-between;
-            padding: 20px 0 0;
+            padding: 16px 0 0;
             border-top: 1.5px dashed #bdc3c7;
-            margin-top: 16px;
+            margin-top: 14px;
         }
-        .sig-block { text-align: center; width: 30%; }
-        .sig-line { height: 40px; border-bottom: 1.5px solid #333; margin-bottom: 6px; }
-        .sig-label { font-size: 0.7rem; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-block {
+            text-align: center;
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sig-img-box {
+            height: 42px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+        .sig-img {
+            max-height: 40px;
+            max-width: 130px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+        .sig-line {
+            width: 100%;
+            border-bottom: 1.5px solid #333;
+            margin-bottom: 4px;
+        }
+        .sig-label {
+            font-size: 0.72rem;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         /* Footer */
         .cert-footer {
@@ -523,18 +553,30 @@
             <!-- Signatures -->
             <div class="signature-section">
                 <div class="sig-block">
+                    <div class="sig-img-box">
+                        {% if class_teacher and class_teacher.signature_url or class_teacher and class_teacher.signature %}
+                            <img src="{% if class_teacher.signature_url %}{{ class_teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' class_teacher.id 'signature' %}{% endif %}" alt="Class Teacher Signature" class="sig-img">
+                        {% endif %}
+                    </div>
                     <div class="sig-line"></div>
                     <div class="sig-label">Class Teacher</div>
+                    {% if class_teacher %}<div style="font-size: 0.68rem; color: #666; margin-top: 2px;">{{ class_teacher.name }}</div>{% endif %}
                 </div>
                 <div class="sig-block">
+                    <div class="sig-img-box">
+                        {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                            <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature" class="sig-img">
+                        {% endif %}
+                    </div>
                     <div class="sig-line"></div>
                     <div class="sig-label">Principal</div>
-                    {% if school_info %}<div style="font-size: 0.68rem; color: #888; margin-top: 2px;">{{ school_info.principal_name }}</div>{% endif %}
+                    {% if school_info %}<div style="font-size: 0.68rem; color: #666; margin-top: 2px;">{{ school_info.principal_name }}</div>{% endif %}
                 </div>
                 <div class="sig-block">
+                    <div class="sig-img-box"></div>
                     <div class="sig-line"></div>
                     <div class="sig-label">Director</div>
-                    {% if school_info %}<div style="font-size: 0.68rem; color: #888; margin-top: 2px;">{{ school_info.director_name }}</div>{% endif %}
+                    {% if school_info %}<div style="font-size: 0.68rem; color: #666; margin-top: 2px;">{{ school_info.director_name }}</div>{% endif %}
                 </div>
             </div>
         </div>

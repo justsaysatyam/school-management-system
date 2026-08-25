@@ -20,10 +20,33 @@ from .forms import (
     LoginForm, OTPVerificationForm, TelegramRegistrationForm,
     TeacherForm, StudentForm, TeacherPaymentForm,
     StudentPaymentForm, NoticeForm, ClassForm, SubjectForm,
-    ComplaintForm, ComplaintResolveForm, InquiryForm
+    ComplaintForm, ComplaintResolveForm, InquiryForm,
+    TeacherSignatureForm, SchoolSettingsForm
 )
 from django.contrib.auth.hashers import make_password
 from .utils import generate_otp, send_telegram_otp, can_resend_otp
+
+
+def get_class_teacher_for_student(student):
+    """
+    Find the class teacher for a student.
+    If multiple teachers are assigned to the class, returns the first teacher
+    who has uploaded a digital signature, or the earliest assigned teacher.
+    """
+    if not student or not student.student_class:
+        return None
+    
+    teachers = student.student_class.class_teachers.filter(is_active=True).order_by('id')
+    if not teachers.exists():
+        return None
+    
+    # Priority: First teacher with an uploaded or linked signature
+    for teacher in teachers:
+        if teacher.signature or teacher.signature_url:
+            return teacher
+            
+    # Fallback to first assigned teacher
+    return teachers.first()
 
 
 # ===================== HOME & AUTH =====================
@@ -1213,14 +1236,51 @@ def teacher_students(request):
 
 
 def teacher_profile(request):
-    """Teacher profile view"""
+    """Teacher profile view with signature upload/management"""
     if request.session.get('user_type') != 'teacher':
         return redirect('teacher_login')
     
     teacher_id = request.session.get('teacher_id')
     teacher = get_object_or_404(Teacher, pk=teacher_id)
     
-    return render(request, 'teacher/profile.html', {'teacher': teacher})
+    if request.method == 'POST':
+        form = TeacherSignatureForm(request.POST, request.FILES)
+        if form.is_valid():
+            if form.cleaned_data.get('remove_signature'):
+                teacher.signature = None
+                teacher.signature_mimetype = None
+                teacher.signature_filename = None
+                teacher.signature_url = None
+                teacher.save()
+                messages.success(request, 'Digital signature removed successfully.')
+            else:
+                sig_url = form.cleaned_data.get('signature_url')
+                sig_file = form.cleaned_data.get('signature')
+                
+                if sig_url:
+                    teacher.signature_url = sig_url
+                    teacher.signature = None
+                    teacher.signature_mimetype = None
+                    teacher.signature_filename = None
+                    teacher.save()
+                    messages.success(request, 'Digital signature URL updated successfully! 🎉')
+                elif sig_file and hasattr(sig_file, 'read'):
+                    teacher.signature = sig_file.read()
+                    teacher.signature_mimetype = sig_file.content_type
+                    teacher.signature_filename = sig_file.name
+                    teacher.signature_url = None
+                    teacher.save()
+                    messages.success(request, 'Digital signature uploaded successfully! 🎉')
+                else:
+                    messages.info(request, 'No changes made to signature.')
+            return redirect('teacher_profile')
+    else:
+        form = TeacherSignatureForm(initial={'signature_url': teacher.signature_url or ''})
+    
+    return render(request, 'teacher/profile.html', {
+        'teacher': teacher,
+        'form': form
+    })
 
 
 # ===================== STUDENT ATTENDANCE (Teacher Portal) =====================
@@ -1421,6 +1481,7 @@ def result_list(request):
                 'overall_grade': overall_grade,
                 'result_status': result_status,
                 'school_info': school_info,
+                'class_teacher': get_class_teacher_for_student(student),
             }
             return render(request, 'public_result_card.html', context)
             
@@ -2071,6 +2132,7 @@ def result_pdf(request, student_id):
         'result_status': result_status,
         'total_subjects': results.count(),
         'school_info': school_info,
+        'class_teacher': get_class_teacher_for_student(student),
         'grade_config': grade_config,
     }
     return render(request, 'public_result_card.html', context)
@@ -2096,6 +2158,7 @@ def fee_receipt_pdf(request, payment_id):
         
     context = {
         'payment': payment,
+        'school_info': SchoolInfo.objects.first(),
     }
     return render(request, 'student/fee_receipt_pdf.html', context)
 
@@ -2162,7 +2225,7 @@ def gallery_delete(request, pk):
 
 def serve_binary(request, model_name, record_id, field_name):
     """View to serve binary data from any model specifically for this project.
-    If the record has a photo_url (for photo fields), redirect to that URL instead."""
+    If the record has a photo_url, signature_url, or principal_signature_url, redirect to that URL instead."""
     try:
         model = apps.get_model('core', model_name)
         record = get_object_or_404(model, pk=record_id)
@@ -2171,6 +2234,16 @@ def serve_binary(request, model_name, record_id, field_name):
         if field_name == 'photo' and hasattr(record, 'photo_url') and record.photo_url:
             from django.shortcuts import redirect as django_redirect
             return django_redirect(record.photo_url)
+
+        # If serving a signature field and signature_url is set, redirect to external URL
+        if field_name == 'signature' and hasattr(record, 'signature_url') and record.signature_url:
+            from django.shortcuts import redirect as django_redirect
+            return django_redirect(record.signature_url)
+
+        # If serving a principal_signature field and principal_signature_url is set, redirect to external URL
+        if field_name == 'principal_signature' and hasattr(record, 'principal_signature_url') and record.principal_signature_url:
+            from django.shortcuts import redirect as django_redirect
+            return django_redirect(record.principal_signature_url)
 
         # Get binary data
         binary_data = getattr(record, field_name, None)
@@ -2183,12 +2256,43 @@ def serve_binary(request, model_name, record_id, field_name):
         
         response = HttpResponse(binary_data, content_type=mimetype)
         # Only set attachment for non-images or if explicitly requested
-        if 'image' not in mimetype:
+        if 'image' not in (mimetype or ''):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
     except Exception as e:
         raise Http404(f"Error serving file: {str(e)}")
+
+# ===================== SCHOOL SETTINGS & PRINCIPAL SIGNATURE (ADMIN) =====================
+
+def admin_school_settings(request):
+    """Admin view to manage school information, logo, and Principal digital signature"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+    
+    school_info = SchoolInfo.objects.first()
+    if not school_info:
+        school_info = SchoolInfo.objects.create()
+    
+    if request.method == 'POST':
+        form = SchoolSettingsForm(request.POST, request.FILES, instance=school_info)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'School settings & Principal signature updated successfully! 🎉')
+            return redirect('admin_school_settings')
+        else:
+            err_msgs = []
+            for field, errs in form.errors.items():
+                err_msgs.append(f"{field}: {', '.join(errs)}")
+            error_str = " | ".join(err_msgs) if err_msgs else "Invalid input"
+            messages.error(request, f"Please correct the errors in the form: {error_str}")
+    else:
+        form = SchoolSettingsForm(instance=school_info)
+    
+    return render(request, 'admin_portal/school_settings.html', {
+        'form': form,
+        'school_info': school_info
+    })
 
 # ===================== HEALTH CHECK =====================
 
@@ -2340,7 +2444,8 @@ def public_admit_card_search(request):
                 'student': student,
                 'ac_request': ac_request,
                 'schedules': schedules,
-                'school_info': school_info
+                'school_info': school_info,
+                'class_teacher': get_class_teacher_for_student(student),
             })
             
         except (ValueError, Student.DoesNotExist):
@@ -2405,6 +2510,7 @@ def student_result_page(request):
         'total_subjects': len(results) if results else 0,
         'grade_config': grade_config,
         'school_info': SchoolInfo.objects.first(),
+        'class_teacher': get_class_teacher_for_student(student),
     }
     return render(request, 'student/result_page.html', context)
 
@@ -2451,6 +2557,7 @@ def admin_student_registration_pdf(request, student_id):
     context = {
         'student': student,
         'school_info': school_info,
+        'class_teacher': get_class_teacher_for_student(student),
         'student_code': f'MPS-{student.pk:04d}',
         'login_email': student.email if student.email else f'student{student.pk}@midpoint.edu',
         'raw_password': student_password,

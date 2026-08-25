@@ -96,6 +96,10 @@ class Teacher(models.Model):
     photo_mimetype = models.CharField(max_length=100, blank=True, null=True)
     photo_filename = models.CharField(max_length=255, blank=True, null=True)
     photo_url = models.URLField(max_length=500, blank=True, null=True, help_text='External photo URL (optional, used if no uploaded photo)')
+    signature = models.BinaryField(blank=True, null=True)
+    signature_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    signature_filename = models.CharField(max_length=255, blank=True, null=True)
+    signature_url = models.URLField(max_length=500, blank=True, null=True, help_text='External signature URL (optional, used if no uploaded signature)')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -354,6 +358,10 @@ class SchoolInfo(models.Model):
     logo = models.BinaryField(blank=True, null=True)
     logo_mimetype = models.CharField(max_length=100, blank=True, null=True)
     logo_filename = models.CharField(max_length=255, blank=True, null=True)
+    principal_signature = models.BinaryField(blank=True, null=True)
+    principal_signature_mimetype = models.CharField(max_length=100, blank=True, null=True)
+    principal_signature_filename = models.CharField(max_length=255, blank=True, null=True)
+    principal_signature_url = models.URLField(max_length=500, blank=True, null=True, help_text='External Principal signature URL (optional)')
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
