@@ -4,3 +4,15 @@ __pycache__/
 *.sqlite3
 .DS_Store
 *.log
+
+# Environment variables (contains secrets — NEVER commit)
+.env
+
+# Virtual environment
+myenv/
+venv/
+env/
+
+# Compiled files
+*.pyc
+*.pyo

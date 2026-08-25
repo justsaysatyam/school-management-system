@@ -1,3 +1,5 @@
+import time
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
@@ -6,18 +8,23 @@ from django.apps import apps
 from django.db.models import Sum, Count
 from django.utils import timezone
 from decimal import Decimal
+from django.contrib.auth import login as auth_login, authenticate
+from django.contrib.auth.models import User
 from .models import (
-    Admin, Teacher, Student, SchoolClass, Subject,
+    Admin, AdminProfile, Teacher, Student, SchoolClass, Subject,
     TeacherPayment, StudentPayment, TeacherAttendance, StudentAttendance,
     Notice, Event, Exam, ExamTerm, SchoolInfo, GalleryImage, Result, Complaint, Inquiry,
     AdmitCardRequest, ExamSchedule, GradeConfig
 )
 from .forms import (
-    LoginForm, TeacherForm, StudentForm, TeacherPaymentForm, 
+    LoginForm, OTPVerificationForm, TelegramRegistrationForm,
+    TeacherForm, StudentForm, TeacherPaymentForm,
     StudentPaymentForm, NoticeForm, ClassForm, SubjectForm,
     ComplaintForm, ComplaintResolveForm, InquiryForm
 )
 from django.contrib.auth.hashers import make_password
+from .utils import generate_otp, send_telegram_otp, can_resend_otp
+
 
 # ===================== HOME & AUTH =====================
 
@@ -92,26 +99,256 @@ def contact_us(request):
 
 
 def admin_login(request):
-    """Admin login view"""
+    """
+    Admin Login with Telegram 2FA Flow:
+    1. Authenticate credentials (Django User or legacy Admin model).
+    2. Fetch/create AdminProfile.
+    3a. No telegram_chat_id → redirect to admin_register_telegram (first-time setup).
+    3b. Has telegram_chat_id → generate OTP, send to Telegram, store in session, redirect to admin_verify_otp.
+    """
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            try:
-                admin = Admin.objects.get(email=email)
-                if admin.check_password(password):
-                    request.session['admin_id'] = admin.id
-                    request.session['user_type'] = 'admin'
-                    request.session['user_name'] = admin.name
-                    return redirect('admin_dashboard')
+
+            authenticated_user = None
+            admin_obj = None
+
+            # Step 1a: Try Django User authentication
+            user_by_email = User.objects.filter(email=email).first()
+            if not user_by_email:
+                user_by_email = User.objects.filter(username=email).first()
+
+            if user_by_email and user_by_email.check_password(password):
+                authenticated_user = user_by_email
+                admin_obj = Admin.objects.filter(email=email).first()
+            else:
+                # Step 1b: Fallback to legacy Admin model
+                try:
+                    admin_obj = Admin.objects.get(email=email)
+                    if admin_obj.check_password(password):
+                        username = email.split('@')[0] if '@' in email else email
+                        authenticated_user, created = User.objects.get_or_create(
+                            username=username,
+                            defaults={
+                                'email': email,
+                                'first_name': admin_obj.name,
+                                'is_staff': True,
+                                'is_superuser': True,
+                            }
+                        )
+                        if created or not authenticated_user.check_password(password):
+                            authenticated_user.set_password(password)
+                            authenticated_user.email = email
+                            authenticated_user.save()
+                    else:
+                        messages.error(request, 'Invalid password. Please try again.')
+                        return render(request, 'admin_portal/login.html', {'form': form})
+                except Admin.DoesNotExist:
+                    messages.error(request, 'No admin account found with that email.')
+                    return render(request, 'admin_portal/login.html', {'form': form})
+
+            if authenticated_user:
+                # Step 2: Fetch or create AdminProfile
+                profile, _ = AdminProfile.objects.get_or_create(user=authenticated_user)
+
+                # Step 3a: No Telegram Chat ID — send to onboarding
+                if not profile.telegram_chat_id:
+                    request.session['pending_telegram_reg_user_id'] = authenticated_user.id
+                    messages.info(
+                        request,
+                        "Welcome! Please link your Telegram account to enable Two-Factor Authentication (2FA)."
+                    )
+                    return redirect('admin_register_telegram')
+
+                # Step 3b: Generate OTP and send to Telegram
+                otp = generate_otp(6)
+                now_ts = int(time.time())
+                request.session['pre_2fa_user_id'] = authenticated_user.id
+                request.session['otp_code'] = otp
+                request.session['otp_expires_at'] = now_ts + 300   # 5 minutes
+                request.session['otp_last_sent_at'] = now_ts
+
+                success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
+                if success:
+                    chat_preview = f"...{profile.telegram_chat_id[-3:]}" if len(profile.telegram_chat_id) > 3 else profile.telegram_chat_id
+                    messages.success(request, f"A 6-digit verification code has been sent to your Telegram account (Chat ID ending {chat_preview}).")
                 else:
-                    messages.error(request, 'Invalid password')
-            except Admin.DoesNotExist:
-                messages.error(request, 'Admin not found')
+                    messages.warning(request, f"Could not send Telegram OTP: {msg}. Please check your Telegram Chat ID or try again.")
+
+                return redirect('admin_verify_otp')
     else:
         form = LoginForm()
+
     return render(request, 'admin_portal/login.html', {'form': form})
+
+
+def admin_verify_otp(request):
+    """
+    Telegram 2FA OTP Verification View.
+    Validates the 6-digit OTP stored in session against the posted value.
+    On success: officially logs in the user and sets admin session keys.
+    """
+    user_id = request.session.get('pre_2fa_user_id')
+    if not user_id:
+        messages.error(request, "Session expired or invalid. Please log in again.")
+        return redirect('admin_login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User account not found. Please log in again.")
+        return redirect('admin_login')
+
+    profile = getattr(user, 'admin_profile', None)
+    masked_chat_id = ""
+    if profile and profile.telegram_chat_id:
+        cid = profile.telegram_chat_id
+        masked_chat_id = ("*" * (len(cid) - 3) + cid[-3:]) if len(cid) > 3 else cid
+
+    if request.method == 'POST':
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            entered_otp = form.cleaned_data['otp_code']
+            session_otp = request.session.get('otp_code', '')
+            expires_at = request.session.get('otp_expires_at', 0)
+            now_ts = int(time.time())
+
+            if not session_otp:
+                messages.error(request, "No active OTP found. Please request a new one using 'Resend OTP'.")
+            elif now_ts > expires_at:
+                messages.error(request, "Your OTP has expired (5-minute limit). Please click 'Resend OTP'.")
+            elif entered_otp != session_otp:
+                messages.error(request, "Incorrect OTP. Please check your Telegram and try again.")
+            else:
+                # ✅ OTP valid — complete login
+                auth_login(request, user)
+                admin_obj = Admin.objects.filter(email=user.email).first()
+                admin_id = admin_obj.id if admin_obj else user.id
+                request.session['admin_id'] = admin_id
+                request.session['user_type'] = 'admin'
+                request.session['user_name'] = (
+                    user.get_full_name() or user.username or
+                    (admin_obj.name if admin_obj else "Admin")
+                )
+                # Clean up temporary 2FA session keys
+                for key in ('pre_2fa_user_id', 'otp_code', 'otp_expires_at', 'otp_last_sent_at'):
+                    request.session.pop(key, None)
+
+                messages.success(request, "Two-Factor Authentication successful. Welcome to the Admin Portal! 🎉")
+                return redirect('admin_dashboard')
+    else:
+        form = OTPVerificationForm()
+
+    context = {
+        'form': form,
+        'masked_chat_id': masked_chat_id,
+        'expires_at': request.session.get('otp_expires_at', 0),
+    }
+    return render(request, 'admin_portal/verify_otp.html', context)
+
+
+def admin_resend_otp(request):
+    """
+    Resend Telegram OTP with a 60-second cooldown.
+    Only accessible via POST to avoid CSRF issues from direct GET links.
+    """
+    user_id = request.session.get('pre_2fa_user_id')
+    if not user_id:
+        messages.error(request, "Session expired. Please log in again.")
+        return redirect('admin_login')
+
+    can_send, secs_remaining = can_resend_otp(request, cooldown_seconds=60)
+    if not can_send:
+        messages.warning(request, f"Please wait {secs_remaining} seconds before requesting a new OTP.")
+        return redirect('admin_verify_otp')
+
+    try:
+        user = User.objects.get(id=user_id)
+        profile = user.admin_profile
+    except (User.DoesNotExist, AdminProfile.DoesNotExist):
+        messages.error(request, "User or Telegram profile not found. Please log in again.")
+        return redirect('admin_login')
+
+    if not profile.telegram_chat_id:
+        request.session['pending_telegram_reg_user_id'] = user.id
+        return redirect('admin_register_telegram')
+
+    otp = generate_otp(6)
+    now_ts = int(time.time())
+    request.session['otp_code'] = otp
+    request.session['otp_expires_at'] = now_ts + 300
+    request.session['otp_last_sent_at'] = now_ts
+
+    success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
+    if success:
+        messages.success(request, "A new OTP has been sent to your Telegram account.")
+    else:
+        messages.warning(request, f"Failed to send Telegram OTP: {msg}")
+
+    return redirect('admin_verify_otp')
+
+
+def admin_register_telegram(request):
+    """
+    Telegram Chat ID Onboarding View.
+    First-time admins link their Telegram Chat ID here before any 2FA OTP can be sent.
+    After saving, an OTP is dispatched immediately and the admin is redirected to verify_otp.
+    """
+    user_id = request.session.get('pending_telegram_reg_user_id')
+    if not user_id:
+        messages.error(request, "Session expired or unauthorised access. Please log in again.")
+        return redirect('admin_login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User account not found.")
+        return redirect('admin_login')
+
+    profile, _ = AdminProfile.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        form = TelegramRegistrationForm(request.POST)
+        if form.is_valid():
+            chat_id = form.cleaned_data['telegram_chat_id']
+            profile.telegram_chat_id = chat_id
+            profile.save()
+
+            # Clear onboarding session key
+            request.session.pop('pending_telegram_reg_user_id', None)
+
+            # Generate and send OTP immediately
+            otp = generate_otp(6)
+            now_ts = int(time.time())
+            request.session['pre_2fa_user_id'] = user.id
+            request.session['otp_code'] = otp
+            request.session['otp_expires_at'] = now_ts + 300
+            request.session['otp_last_sent_at'] = now_ts
+
+            success, msg = send_telegram_otp(chat_id, otp)
+            if success:
+                messages.success(request, "Telegram account linked! A verification OTP has been sent to your Telegram.")
+            else:
+                messages.warning(
+                    request,
+                    f"Chat ID saved, but OTP could not be sent: {msg}. "
+                    "Make sure you have started @School_sms_auth_bot on Telegram."
+                )
+
+            return redirect('admin_verify_otp')
+    else:
+        form = TelegramRegistrationForm(
+            initial={'telegram_chat_id': profile.telegram_chat_id or ''}
+        )
+
+    context = {
+        'form': form,
+        'user_name': user.get_full_name() or user.username,
+    }
+    return render(request, 'admin_portal/register_telegram.html', context)
+
 
 
 def teacher_login(request):

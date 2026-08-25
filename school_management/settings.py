@@ -10,9 +10,10 @@ import sys
 # Load environment variables from .env file if it exists
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(override=True)
 except ImportError:
     pass
+
 
 # Import dj_database_url conditionally is better for local dev if not installed
 try:
@@ -169,3 +170,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://midpointschool.online",
     "https://*.onrender.com",
 ]
+
+# Telegram Bot 2FA Settings
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+

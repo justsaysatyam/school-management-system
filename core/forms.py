@@ -1,4 +1,5 @@
 from django import forms
+import re
 from .models import Admin, Teacher, Student, TeacherPayment, StudentPayment, Notice, Event, SchoolClass, Subject, Complaint, Inquiry
 
 
@@ -12,6 +13,54 @@ class LoginForm(forms.Form):
         'class': 'form-input',
         'placeholder': 'Enter your password'
     }))
+
+
+class OTPVerificationForm(forms.Form):
+    """Telegram 2FA: 6-digit OTP verification"""
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="6-Digit OTP",
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '000000',
+            'maxlength': '6',
+            'pattern': '[0-9]{6}',
+            'inputmode': 'numeric',
+            'autocomplete': 'one-time-code',
+            'autofocus': True,
+        })
+    )
+
+    def clean_otp_code(self):
+        otp = self.cleaned_data.get('otp_code', '').strip()
+        if not otp.isdigit() or len(otp) != 6:
+            raise forms.ValidationError("OTP must be exactly 6 digits.")
+        return otp
+
+
+class TelegramRegistrationForm(forms.Form):
+    """Onboarding form for linking Telegram Chat ID to an admin account"""
+    telegram_chat_id = forms.CharField(
+        max_length=20,
+        label="Telegram Chat ID",
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g. 123456789',
+            'inputmode': 'numeric',
+            'autofocus': True,
+        }),
+        help_text="Send any message to @userinfobot on Telegram and it will reply with your numeric Chat ID."
+    )
+
+    def clean_telegram_chat_id(self):
+        chat_id = self.cleaned_data.get('telegram_chat_id', '').strip()
+        # Allow optional leading minus (for group chat IDs) but otherwise numeric
+        if not chat_id.lstrip('-').isdigit():
+            raise forms.ValidationError("Chat ID must be a numeric value (e.g. 123456789).")
+        return chat_id
+
+
 
 
 class AdminForm(forms.ModelForm):

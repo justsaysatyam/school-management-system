@@ -7,7 +7,11 @@ urlpatterns = [
     path('about/', views.about_us, name='about_us'),
     path('contact/', views.contact_us, name='contact_us'),
     path('admin-login/', views.admin_login, name='admin_login'),
+    path('admin-verify-otp/', views.admin_verify_otp, name='admin_verify_otp'),
+    path('admin-resend-otp/', views.admin_resend_otp, name='admin_resend_otp'),
+    path('admin-register-telegram/', views.admin_register_telegram, name='admin_register_telegram'),
     path('teacher-login/', views.teacher_login, name='teacher_login'),
+
     path('student-login/', views.student_login, name='student_login'),
     path('logout/', views.logout, name='logout'),
     

@@ -1,6 +1,32 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 from decimal import Decimal
+
+
+class AdminProfile(models.Model):
+    """Profile for Django User model to support 2FA via Telegram Bot"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
+    phone_number = models.CharField(
+        max_length=17,
+        blank=True,
+        null=True,
+        help_text="Phone number in E.164 format (e.g., +91XXXXXXXXXX)"
+    )
+    telegram_chat_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Telegram numeric Chat ID for 2FA OTP delivery (get it from @userinfobot)"
+    )
+
+    class Meta:
+        verbose_name = "Admin Profile"
+        verbose_name_plural = "Admin Profiles"
+
+    def __str__(self):
+        return f"AdminProfile({self.user.username}) | Telegram: {self.telegram_chat_id or 'Not Linked'}"
+
 
 
 class SchoolClass(models.Model):
@@ -48,6 +74,7 @@ class Admin(models.Model):
     
     def __str__(self):
         return self.name
+
 
 
 class Teacher(models.Model):
