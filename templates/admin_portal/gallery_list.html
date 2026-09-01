@@ -9,122 +9,35 @@
         min-height: 100vh;
         font-family: 'Inter', sans-serif;
     }
-
-    .page-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem;
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    .page-header { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .upload-card { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .gallery-item { background: rgba(255,255,255,0.95); border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: all 0.3s; }
+    .gallery-item:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
+    .gallery-info { padding: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 0.8rem; border: 2px solid #e0e0e0;
+        border-radius: 10px; font-size: 1rem; box-sizing: border-box;
     }
+    .btn { padding: 0.8rem 2rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: white; text-decoration: none; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 10px; }
+    .category-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 15px; background: #667eea; color: white; font-size: 0.85rem; margin-bottom: 0.5rem; }
 
-    .page-header {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    .upload-card {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .gallery-item {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s;
-    }
-
-    .gallery-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .gallery-item img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .gallery-info {
-        padding: 1rem;
-    }
-
-    .form-group {
-        margin-bottom: 1rem;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 0.8rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        font-size: 1rem;
-    }
-
-    .btn {
-        padding: 0.8rem 2rem;
-        border: none;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .btn-danger {
-        background: #ef4444;
-        color: white;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .back-link {
-        display: inline-block;
-        margin-bottom: 1rem;
-        color: white;
-        text-decoration: none;
-        padding: 0.5rem 1rem;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-    }
-
-    .category-badge {
-        display: inline-block;
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        background: #667eea;
-        color: white;
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
-    }
+    /* Image source toggle */
+    .img-source-tabs { display: flex; margin-bottom: 1rem; border-radius: 10px; overflow: hidden; border: 2px solid #667eea; }
+    .img-source-tab { flex: 1; padding: 0.7rem; text-align: center; cursor: pointer; font-weight: 600; font-size: 0.95rem; background: white; color: #667eea; border: none; transition: all 0.2s; }
+    .img-source-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .img-source-section { display: none; }
+    .img-source-section.active { display: block; }
+    .img-preview { margin-top: 0.5rem; border-radius: 10px; overflow: hidden; display: none; }
+    .img-preview img { width: 100%; height: 150px; object-fit: cover; }
 </style>
 
 <div class="page-container">
@@ -137,35 +50,32 @@
 
     {% if messages %}
     {% for message in messages %}
-    <div
-        style="background: {% if message.tags == 'success' %}#d1fae5{% elif message.tags == 'error' %}#fee2e2{% else %}#fef3c7{% endif %}; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+    <div style="background: {% if message.tags == 'success' %}#d1fae5{% elif message.tags == 'error' %}#fee2e2{% else %}#fef3c7{% endif %}; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
         {{ message }}
     </div>
     {% endfor %}
     {% endif %}
 
     <div class="upload-card">
-        <h2 style="margin-top: 0; color: #667eea;">Upload New Image</h2>
+        <h2 style="margin-top: 0; color: #667eea;">Add New Image</h2>
         <form method="POST" action="{% url 'gallery_add' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
                     <label>Title *</label>
-                    <input type="text" name="title" required>
+                    <input type="text" name="title" required placeholder="Image ka title likhein">
                 </div>
-
                 <div class="form-group">
                     <label>Category *</label>
                     <select name="category" required>
                         <option value="Building">School Building</option>
                         <option value="Students">Students</option>
                         <option value="Events">Events</option>
-                        <option value="Sports">Sports & PT</option>
+                        <option value="Sports">Sports &amp; PT</option>
                         <option value="Annual Day">Annual Day</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Display Order</label>
                     <input type="number" name="display_order" value="0">
@@ -174,30 +84,73 @@
 
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" rows="2"></textarea>
+                <textarea name="description" rows="2" placeholder="Optional description..."></textarea>
             </div>
 
+            <!-- Image Source Toggle -->
             <div class="form-group">
-                <label>Image *</label>
-                <input type="file" name="image" accept="image/*" required>
+                <label>Image Source *</label>
+                <div class="img-source-tabs">
+                    <button type="button" class="img-source-tab active" onclick="switchTab('file')" id="tab-file">
+                        📁 File Upload
+                    </button>
+                    <button type="button" class="img-source-tab" onclick="switchTab('url')" id="tab-url">
+                        🔗 Image URL
+                    </button>
+                </div>
+
+                <!-- File Upload -->
+                <div class="img-source-section active" id="section-file">
+                    <input type="file" name="image" id="imageFile" accept="image/*" onchange="previewFile(this)">
+                    <div class="img-preview" id="file-preview">
+                        <img id="file-preview-img" src="" alt="Preview">
+                    </div>
+                </div>
+
+                <!-- URL Input -->
+                <div class="img-source-section" id="section-url">
+                    <input type="url" name="image_url" id="imageUrl"
+                        placeholder="https://example.com/photo.jpg"
+                        oninput="previewUrl(this.value)">
+                    <div class="img-preview" id="url-preview">
+                        <img id="url-preview-img" src="" alt="URL Preview"
+                             onerror="this.parentElement.style.display='none'">
+                    </div>
+                    <small style="color:#888; display:block; margin-top:0.4rem;">
+                        💡 Google Photos, ImgBB, Cloudinary ya koi bhi public image URL kaam karega
+                    </small>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Upload Image</button>
+            <button type="submit" class="btn btn-primary" onclick="return validateForm()">
+                ➕ Add to Gallery
+            </button>
         </form>
     </div>
 
-    <h2 style="color: white; margin-bottom: 1.5rem;">Gallery Images ({{ images.count }})</h2>
+    <h2 style="color: white; margin-bottom: 1.5rem;">Gallery Images ({{ images|length }})</h2>
 
     {% if images %}
     <div class="gallery-grid">
         {% for image in images %}
         <div class="gallery-item">
-            <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
+            {% if image.image %}
+                <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
+            {% elif image.image_url %}
+                <img src="{{ image.image_url }}" alt="{{ image.title }}"
+                     onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Available'">
+            {% else %}
+                <div style="width:100%;height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:0.9rem;">
+                    No Image
+                </div>
+            {% endif %}
             <div class="gallery-info">
                 <span class="category-badge">{{ image.category }}</span>
+                {% if image.image_url and not image.image %}
+                    <span style="display:inline-block;padding:0.2rem 0.6rem;border-radius:10px;background:#e0f2fe;color:#0369a1;font-size:0.75rem;margin-left:0.3rem;">🔗 URL</span>
+                {% endif %}
                 <h3 style="margin: 0.5rem 0;">{{ image.title }}</h3>
-                <p style="color: #666; font-size: 0.9rem; margin: 0.5rem 0;">{{ image.description|truncatewords:15 }}
-                </p>
+                <p style="color: #666; font-size: 0.9rem; margin: 0.5rem 0;">{{ image.description|truncatewords:15 }}</p>
                 <small style="color: #999;">Uploaded: {{ image.upload_date|date:"M d, Y" }}</small>
                 <form method="POST" action="{% url 'gallery_delete' image.id %}" style="margin-top: 1rem;"
                     onsubmit="return confirm('Delete this image?');">
@@ -214,5 +167,48 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+    function switchTab(type) {
+        document.getElementById('tab-file').classList.toggle('active', type === 'file');
+        document.getElementById('tab-url').classList.toggle('active', type === 'url');
+        document.getElementById('section-file').classList.toggle('active', type === 'file');
+        document.getElementById('section-url').classList.toggle('active', type === 'url');
+        if (type === 'file') {
+            document.getElementById('imageUrl').value = '';
+            document.getElementById('url-preview').style.display = 'none';
+        } else {
+            document.getElementById('imageFile').value = '';
+            document.getElementById('file-preview').style.display = 'none';
+        }
+    }
+
+    function previewUrl(url) {
+        const preview = document.getElementById('url-preview');
+        const img = document.getElementById('url-preview-img');
+        if (url) { img.src = url; preview.style.display = 'block'; }
+        else { preview.style.display = 'none'; }
+    }
+
+    function previewFile(input) {
+        const preview = document.getElementById('file-preview');
+        const img = document.getElementById('file-preview-img');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function validateForm() {
+        const fileInput = document.getElementById('imageFile');
+        const urlInput = document.getElementById('imageUrl');
+        if (!fileInput.files.length && !urlInput.value.trim()) {
+            alert('Kripya image file upload karein ya image URL dalein!');
+            return false;
+        }
+        return true;
+    }
+</script>
 
 {% endblock %}

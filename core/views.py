@@ -2187,22 +2187,29 @@ def gallery_add(request):
         title = request.POST.get('title')
         category = request.POST.get('category')
         description = request.POST.get('description', '')
-        image = request.FILES.get('image')
+        image_file = request.FILES.get('image')
+        image_url = request.POST.get('image_url', '').strip()
         display_order = request.POST.get('display_order', 0)
         
-        if title and image:
-            GalleryImage.objects.create(
+        if title and (image_file or image_url):
+            gallery_obj = GalleryImage(
                 title=title,
                 category=category,
                 description=description,
-                image=image.read(),
-                image_mimetype=image.content_type,
-                image_filename=image.name,
                 display_order=int(display_order) if display_order else 0
             )
+            if image_file:
+                # File upload — binary mein save karo
+                gallery_obj.image = image_file.read()
+                gallery_obj.image_mimetype = image_file.content_type
+                gallery_obj.image_filename = image_file.name
+            elif image_url:
+                # Sirf URL save karo
+                gallery_obj.image_url = image_url
+            gallery_obj.save()
             messages.success(request, 'Gallery image added successfully')
         else:
-            messages.error(request, 'Title and image are required')
+            messages.error(request, 'Title aur image (file ya URL) required hai')
         
         return redirect('gallery_list')
     

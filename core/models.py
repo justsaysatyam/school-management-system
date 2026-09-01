@@ -387,6 +387,7 @@ class GalleryImage(models.Model):
     image = models.BinaryField(blank=True, null=True)
     image_mimetype = models.CharField(max_length=100, blank=True, null=True)
     image_filename = models.CharField(max_length=255, blank=True, null=True)
+    image_url = models.URLField(max_length=500, blank=True, null=True, help_text='External image URL (optional, used if no uploaded image)')
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')
     description = models.TextField(blank=True)
     upload_date = models.DateTimeField(auto_now_add=True)
