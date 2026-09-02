@@ -137,7 +137,14 @@ urlpatterns = [
     
     # School Settings & Principal Signature (Admin)
     path('admin/school-settings/', views.admin_school_settings, name='admin_school_settings'),
-    
+
+    # Marquee Text Manager (Admin)
+    path('admin/marquee/', views.admin_marquee_manager, name='admin_marquee_manager'),
+
+    # Admin Credentials Change (Admin)
+    path('admin/change-credentials/', views.admin_change_credentials, name='admin_change_credentials'),
+    path('admin/change-credentials/verify-otp/', views.admin_change_credentials_verify_otp, name='admin_change_credentials_verify_otp'),
+
     # Health Check
     path('health-check/', views.health_check, name='health_check'),
 ]

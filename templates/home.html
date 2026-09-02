@@ -862,11 +862,13 @@
 </header>
 
 <!-- Admission Marquee -->
+{% if school_info.home_marquee_text %}
 <div class="admission-marquee">
     <a href="#home-inquiry-section" class="marquee-content">
-        🚀 ADMISSION OPEN NOW FOR NEW SESSION 2026-2027 • REGISTER YOUR INTEREST TODAY • CLICK HERE TO SEND AN INQUIRY 🚀
+        {{ school_info.home_marquee_text }}
     </a>
 </div>
+{% endif %}
 
 <!-- Hero Section -->
 <section class="hero">

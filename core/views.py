@@ -2570,3 +2570,176 @@ def admin_student_registration_pdf(request, student_id):
         'raw_password': student_password,
     }
     return render(request, 'admin_portal/student_registration_pdf.html', context)
+
+
+# ===================== MARQUEE MANAGER =====================
+
+def admin_marquee_manager(request):
+    """Admin view to manage scrolling marquee text on Home and Result pages"""
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+
+    school_info = SchoolInfo.objects.first()
+    if not school_info:
+        school_info = SchoolInfo.objects.create()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_home':
+            text = request.POST.get('home_marquee_text', '').strip()
+            school_info.home_marquee_text = text if text else None
+            school_info.save(update_fields=['home_marquee_text'])
+            messages.success(request, 'Home page marquee text updated successfully!')
+
+        elif action == 'delete_home':
+            school_info.home_marquee_text = None
+            school_info.save(update_fields=['home_marquee_text'])
+            messages.success(request, 'Home page marquee text has been removed.')
+
+        elif action == 'update_result':
+            text = request.POST.get('result_marquee_text', '').strip()
+            school_info.result_marquee_text = text if text else None
+            school_info.save(update_fields=['result_marquee_text'])
+            messages.success(request, 'Result page marquee text updated successfully!')
+
+        elif action == 'delete_result':
+            school_info.result_marquee_text = None
+            school_info.save(update_fields=['result_marquee_text'])
+            messages.success(request, 'Result page marquee text has been removed.')
+
+        return redirect('admin_marquee_manager')
+
+    return render(request, 'admin_portal/marquee_manager.html', {'school_info': school_info})
+
+
+# ===================== ADMIN CREDENTIALS CHANGE =====================
+
+def admin_change_credentials(request):
+    """
+    Step 1 — Admin verifies current username+password, then triggers OTP to Telegram.
+    """
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+
+    if request.method == 'POST':
+        current_username = request.POST.get('current_username', '').strip()
+        current_password = request.POST.get('current_password', '').strip()
+        new_username = request.POST.get('new_username', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        # Validate new password match
+        if new_password != confirm_password:
+            messages.error(request, 'New password and confirm password do not match.')
+            return render(request, 'admin_portal/change_credentials.html', {})
+
+        if not new_username and not new_password:
+            messages.error(request, 'Please enter a new username or new password to update.')
+            return render(request, 'admin_portal/change_credentials.html', {})
+
+        # Verify current credentials
+        user = authenticate(username=current_username, password=current_password)
+        if user is None:
+            # Try email-based auth
+            user_obj = User.objects.filter(email=current_username).first()
+            if user_obj and user_obj.check_password(current_password):
+                user = user_obj
+
+        if user is None:
+            messages.error(request, 'Current username or password is incorrect. Please try again.')
+            return render(request, 'admin_portal/change_credentials.html', {})
+
+        # Get Telegram profile for OTP
+        profile = getattr(user, 'admin_profile', None)
+        if not profile or not profile.telegram_chat_id:
+            messages.error(request, 'No Telegram account linked. Cannot send OTP for verification.')
+            return render(request, 'admin_portal/change_credentials.html', {})
+
+        # Generate OTP and store pending changes in session
+        otp = generate_otp(6)
+        now_ts = int(time.time())
+        request.session['creds_change_user_id'] = user.id
+        request.session['creds_change_new_username'] = new_username
+        request.session['creds_change_new_password'] = new_password
+        request.session['creds_change_otp'] = otp
+        request.session['creds_change_otp_expires'] = now_ts + 300
+
+        success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
+        if success:
+            messages.success(request, 'A 6-digit OTP has been sent to your Telegram. Please verify to complete the change.')
+        else:
+            messages.warning(request, f'Could not send OTP via Telegram: {msg}. Please try again.')
+            for key in ('creds_change_user_id', 'creds_change_new_username', 'creds_change_new_password', 'creds_change_otp', 'creds_change_otp_expires'):
+                request.session.pop(key, None)
+            return render(request, 'admin_portal/change_credentials.html', {})
+
+        return redirect('admin_change_credentials_verify_otp')
+
+    return render(request, 'admin_portal/change_credentials.html', {})
+
+
+def admin_change_credentials_verify_otp(request):
+    """
+    Step 2 — Verify OTP and apply new username/password.
+    """
+    if request.session.get('user_type') != 'admin':
+        return redirect('admin_login')
+
+    user_id = request.session.get('creds_change_user_id')
+    if not user_id:
+        messages.error(request, 'No pending credential change. Please start over.')
+        return redirect('admin_change_credentials')
+
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp_code', '').strip()
+        session_otp = request.session.get('creds_change_otp', '')
+        expires_at = request.session.get('creds_change_otp_expires', 0)
+        now_ts = int(time.time())
+
+        if not session_otp:
+            messages.error(request, 'OTP session expired. Please start over.')
+            return redirect('admin_change_credentials')
+        if now_ts > expires_at:
+            messages.error(request, 'OTP has expired (5-minute limit). Please start over.')
+            return redirect('admin_change_credentials')
+        if entered_otp != session_otp:
+            messages.error(request, 'Incorrect OTP. Please check your Telegram and try again.')
+            return render(request, 'admin_portal/change_credentials_otp.html', {})
+
+        # OTP valid — apply changes
+        try:
+            user = User.objects.get(id=user_id)
+            new_username = request.session.get('creds_change_new_username', '')
+            new_password = request.session.get('creds_change_new_password', '')
+
+            if new_username:
+                # Check uniqueness
+                if User.objects.filter(username=new_username).exclude(id=user.id).exists():
+                    messages.error(request, f'Username "{new_username}" is already taken. Please choose another.')
+                    return render(request, 'admin_portal/change_credentials_otp.html', {})
+                user.username = new_username
+
+            if new_password:
+                user.set_password(new_password)
+                # Also update Admin model password if exists
+                admin_obj = Admin.objects.filter(email=user.email).first()
+                if admin_obj:
+                    admin_obj.set_password(new_password)
+                    admin_obj.save()
+
+            user.save()
+
+            # Clean up session
+            for key in ('creds_change_user_id', 'creds_change_new_username', 'creds_change_new_password', 'creds_change_otp', 'creds_change_otp_expires'):
+                request.session.pop(key, None)
+
+            messages.success(request, 'Credentials updated successfully! Please log in again with your new credentials.')
+            request.session.flush()
+            return redirect('admin_login')
+
+        except User.DoesNotExist:
+            messages.error(request, 'User not found. Please log in again.')
+            return redirect('admin_login')
+
+    return render(request, 'admin_portal/change_credentials_otp.html', {})

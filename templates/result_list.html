@@ -165,11 +165,13 @@
     }
 </style>
 
+{% if school_info.result_marquee_text %}
 <div class="admit-marquee">
     <a href="{% url 'public_admit_card_search' %}" class="marquee-content">
-        ✨ CLICK FOR DOWNLOAD NEW EXAMINATION ADMIT CARD ✨
+        {{ school_info.result_marquee_text }}
     </a>
 </div>
+{% endif %}
 
 <div class="page-container">
     <a href="{% url 'home' %}" class="back-link">&#8592; Back to Home</a>

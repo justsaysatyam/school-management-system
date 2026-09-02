@@ -121,6 +121,18 @@
                 </a>
             </li>
 
+            <span class="nav-section-title">Site Settings</span>
+            <li class="nav-item">
+                <a href="{% url 'admin_marquee_manager' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_marquee_manager' %}active{% endif %}">
+                    <span class="icon">📣</span> Marquee Text
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin_change_credentials' %}" class="nav-link {% if 'change_credentials' in request.resolver_match.url_name %}active{% endif %}">
+                    <span class="icon">🔑</span> Change Credentials
+                </a>
+            </li>
+
             <li class="nav-item" style="margin-top: 2rem;">
                 <a href="{% url 'logout' %}" class="nav-link">
                     <span class="icon">🚪</span> Logout

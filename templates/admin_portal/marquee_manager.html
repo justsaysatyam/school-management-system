@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marquee Text Manager - Mid Point School{% endblock %}
+
+{% block body %}
+<div class="dashboard-layout">
+    {% include 'admin_portal/sidebar.html' %}
+
+    <main class="main-content">
+        <div class="top-header">
+            <div class="top-header-left">
+                <button class="mobile-sidebar-toggle" aria-label="Toggle Navigation">☰</button>
+                <h1 class="page-title">📢 Marquee Text Manager</h1>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <style>
+            .marquee-section {
+                background: var(--white);
+                border-radius: 16px;
+                box-shadow: var(--shadow-md);
+                padding: 2rem;
+                margin-bottom: 1.8rem;
+            }
+            .marquee-section-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 1.2rem;
+                padding-bottom: 0.9rem;
+                border-bottom: 2px solid var(--gray-100);
+            }
+            .marquee-section-header .badge-page {
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                padding: 3px 12px;
+                border-radius: 50px;
+                background: #ede9fe;
+                color: #7c3aed;
+            }
+            .marquee-section-header h2 {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: var(--gray-800);
+                margin: 0;
+            }
+            .preview-strip {
+                overflow: hidden;
+                white-space: nowrap;
+                border-radius: 10px;
+                padding: 10px 0;
+                margin-bottom: 1.2rem;
+                font-weight: 700;
+                font-size: 0.9rem;
+                position: relative;
+            }
+            .preview-strip.home-strip {
+                background: linear-gradient(to right, #667eea, #764ba2);
+                color: #fff;
+            }
+            .preview-strip.result-strip {
+                background: linear-gradient(to right, #ff7e5f, #feb47b);
+                color: #fff;
+            }
+            .preview-strip .preview-inner {
+                display: inline-block;
+                padding: 0 2rem;
+                animation: marqPreview 18s linear infinite;
+            }
+            @keyframes marqPreview {
+                from { transform: translateX(100%); }
+                to   { transform: translateX(-100%); }
+            }
+            .preview-strip.empty-strip {
+                background: var(--gray-100);
+                color: var(--gray-400);
+                text-align: center;
+                padding: 10px;
+                font-style: italic;
+                font-weight: 400;
+            }
+            .marquee-form-row {
+                display: flex;
+                gap: 0.8rem;
+                align-items: flex-end;
+            }
+            .marquee-form-row textarea {
+                flex: 1;
+                border: 2px solid var(--gray-200);
+                border-radius: 10px;
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+                resize: vertical;
+                min-height: 72px;
+                font-family: inherit;
+                transition: border-color 0.2s;
+                outline: none;
+            }
+            .marquee-form-row textarea:focus {
+                border-color: #7c3aed;
+            }
+            .marquee-btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                flex-shrink: 0;
+            }
+            .btn-update {
+                background: linear-gradient(135deg, #7c3aed, #4f46e5);
+                color: #fff;
+                border: none;
+                padding: 9px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.87rem;
+                transition: opacity 0.2s, transform 0.2s;
+                white-space: nowrap;
+            }
+            .btn-update:hover { opacity: 0.9; transform: translateY(-1px); }
+            .btn-delete-marquee {
+                background: #fff;
+                color: #ef4444;
+                border: 2px solid #fca5a5;
+                padding: 9px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.87rem;
+                transition: background 0.2s, border-color 0.2s;
+                white-space: nowrap;
+            }
+            .btn-delete-marquee:hover { background: #fef2f2; border-color: #ef4444; }
+            .tip-text {
+                font-size: 0.78rem;
+                color: var(--gray-400);
+                margin-top: 0.6rem;
+            }
+        </style>
+
+        <!-- ─── Home Page Marquee ─────────────────────────────── -->
+        <div class="marquee-section">
+            <div class="marquee-section-header">
+                <h2>🏠 Home Page Marquee</h2>
+                <span class="badge-page">home page</span>
+            </div>
+
+            <!-- Live Preview -->
+            {% if school_info.home_marquee_text %}
+            <div class="preview-strip home-strip">
+                <span class="preview-inner">{{ school_info.home_marquee_text }}</span>
+            </div>
+            {% else %}
+            <div class="preview-strip empty-strip">No marquee text set — strip is hidden on home page</div>
+            {% endif %}
+
+            <!-- Update Form -->
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_home">
+                <div class="marquee-form-row">
+                    <textarea id="home_marquee_text" name="home_marquee_text"
+                        placeholder="Enter scrolling text for the Home page... e.g. 🚀 ADMISSION OPEN FOR SESSION 2026-27 • CLICK TO ENQUIRE">{{ school_info.home_marquee_text|default:'' }}</textarea>
+                    <div class="marquee-btn-group">
+                        <button type="submit" class="btn-update">💾 Save</button>
+                    </div>
+                </div>
+                <p class="tip-text">💡 Use • or | as separators between announcements. Emojis are supported.</p>
+            </form>
+
+            <!-- Delete Form -->
+            {% if school_info.home_marquee_text %}
+            <form method="post" style="margin-top: 0.5rem;" onsubmit="return confirm('Remove home page marquee text?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_home">
+                <button type="submit" class="btn-delete-marquee">🗑️ Remove Home Marquee</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- ─── Result Page Marquee ───────────────────────────── -->
+        <div class="marquee-section">
+            <div class="marquee-section-header">
+                <h2>📊 Result Page Marquee</h2>
+                <span class="badge-page">result page</span>
+            </div>
+
+            <!-- Live Preview -->
+            {% if school_info.result_marquee_text %}
+            <div class="preview-strip result-strip">
+                <span class="preview-inner">{{ school_info.result_marquee_text }}</span>
+            </div>
+            {% else %}
+            <div class="preview-strip empty-strip">No marquee text set — strip is hidden on result page</div>
+            {% endif %}
+
+            <!-- Update Form -->
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_result">
+                <div class="marquee-form-row">
+                    <textarea id="result_marquee_text" name="result_marquee_text"
+                        placeholder="Enter scrolling text for the Result page... e.g. ✨ CLICK TO DOWNLOAD YOUR ADMIT CARD">{{ school_info.result_marquee_text|default:'' }}</textarea>
+                    <div class="marquee-btn-group">
+                        <button type="submit" class="btn-update">💾 Save</button>
+                    </div>
+                </div>
+                <p class="tip-text">💡 This marquee links to the Admit Card download page automatically.</p>
+            </form>
+
+            <!-- Delete Form -->
+            {% if school_info.result_marquee_text %}
+            <form method="post" style="margin-top: 0.5rem;" onsubmit="return confirm('Remove result page marquee text?')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_result">
+                <button type="submit" class="btn-delete-marquee">🗑️ Remove Result Marquee</button>
+            </form>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+{% endblock %}

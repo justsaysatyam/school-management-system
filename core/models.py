@@ -362,6 +362,18 @@ class SchoolInfo(models.Model):
     principal_signature_mimetype = models.CharField(max_length=100, blank=True, null=True)
     principal_signature_filename = models.CharField(max_length=255, blank=True, null=True)
     principal_signature_url = models.URLField(max_length=500, blank=True, null=True, help_text='External Principal signature URL (optional)')
+    home_marquee_text = models.TextField(
+        blank=True,
+        null=True,
+        default='🚀 ADMISSION OPEN NOW FOR NEW SESSION 2026-2027 • REGISTER YOUR INTEREST TODAY • CLICK HERE TO SEND AN INQUIRY 🚀',
+        help_text='Scrolling marquee text shown on the Home page'
+    )
+    result_marquee_text = models.TextField(
+        blank=True,
+        null=True,
+        default='✨ CLICK FOR DOWNLOAD NEW EXAMINATION ADMIT CARD ✨',
+        help_text='Scrolling marquee text shown on the Result page'
+    )
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
