@@ -31,10 +31,20 @@ ADMIN_ACCOUNTS = [
 
 
 class Command(BaseCommand):
-    help = "Create or update permanent admin accounts with Telegram 2FA chat IDs (idempotent)"
+    help = "Create default admin accounts if they do not exist (preserves custom passwords on redeploy)"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset-passwords',
+            action='store_true',
+            help='Force reset admin passwords back to default hardcoded values',
+        )
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE("Seeding permanent admin accounts..."))
+        reset_passwords = options.get('reset_passwords', False)
+        self.stdout.write(self.style.NOTICE(
+            f"Checking admin accounts... (reset_passwords={reset_passwords})"
+        ))
 
         for acc in ADMIN_ACCOUNTS:
             username = acc['username']
@@ -43,42 +53,54 @@ class Command(BaseCommand):
             name = acc['name']
             telegram_chat_id = acc['telegram_chat_id']
 
-            # 1. Create or update Django User by username or email
+            # 1. Check if Django User exists by username or email
             user = User.objects.filter(username=username).first()
             if not user:
                 user = User.objects.filter(email=email).first()
 
             if not user:
+                # Create brand new user
                 user = User.objects.create_user(
                     username=username,
                     email=email,
                     password=password,
                 )
-                action = "Created"
+                user.first_name = name.split()[0]
+                user.last_name = ' '.join(name.split()[1:]) if len(name.split()) > 1 else ''
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+                self.stdout.write(self.style.SUCCESS(
+                    f"[CREATED] Django User: username={username}, email={email}"
+                ))
             else:
-                user.username = username
-                user.email = email
-                user.set_password(password)
-                action = "Updated"
+                # User already exists - DO NOT overwrite custom username or password!
+                if reset_passwords:
+                    user.username = username
+                    user.email = email
+                    user.set_password(password)
+                    self.stdout.write(self.style.WARNING(
+                        f"[FORCE RESET] User password & username reset to defaults: {username}"
+                    ))
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+                self.stdout.write(self.style.SUCCESS(
+                    f"[PRESERVED] User exists, credentials preserved: username={user.username}, email={user.email}"
+                ))
 
-            user.first_name = name.split()[0]
-            user.last_name = ' '.join(name.split()[1:]) if len(name.split()) > 1 else ''
-            user.is_staff = True
-            user.is_superuser = True
-            user.save()
-
-            self.stdout.write(self.style.SUCCESS(
-                f"[OK] Django User {action}: username={username}, email={email}"
-            ))
-
-            # 2. Ensure AdminProfile exists and set permanent Telegram Chat ID
+            # 2. Ensure AdminProfile exists (preserve custom telegram_chat_id if set)
             profile, _ = AdminProfile.objects.get_or_create(user=user)
-            profile.telegram_chat_id = telegram_chat_id
-            profile.save()
-
-            self.stdout.write(self.style.SUCCESS(
-                f"[OK] AdminProfile linked: telegram_chat_id={profile.telegram_chat_id}"
-            ))
+            if not profile.telegram_chat_id or reset_passwords:
+                profile.telegram_chat_id = telegram_chat_id
+                profile.save()
+                self.stdout.write(self.style.SUCCESS(
+                    f"[OK] AdminProfile chat ID set: {profile.telegram_chat_id}"
+                ))
+            else:
+                self.stdout.write(self.style.SUCCESS(
+                    f"[PRESERVED] AdminProfile chat ID: {profile.telegram_chat_id}"
+                ))
 
             # 3. Create or update legacy Admin model entry
             admin_entry, admin_created = Admin.objects.get_or_create(
@@ -89,14 +111,22 @@ class Command(BaseCommand):
                     'role': 'Administrator',
                 }
             )
-            admin_entry.name = name
-            admin_entry.set_password(password)
-            admin_entry.save()
-
-            admin_action = "Created" if admin_created else "Updated"
-            self.stdout.write(self.style.SUCCESS(
-                f"[OK] Legacy Admin entry {admin_action}: email={email}"
-            ))
+            if admin_created:
+                admin_entry.set_password(password)
+                admin_entry.save()
+                self.stdout.write(self.style.SUCCESS(
+                    f"[CREATED] Legacy Admin entry: email={email}"
+                ))
+            elif reset_passwords:
+                admin_entry.set_password(password)
+                admin_entry.save()
+                self.stdout.write(self.style.WARNING(
+                    f"[FORCE RESET] Legacy Admin password reset: email={email}"
+                ))
+            else:
+                self.stdout.write(self.style.SUCCESS(
+                    f"[PRESERVED] Legacy Admin entry exists: email={email}"
+                ))
 
         self.stdout.write(self.style.SUCCESS(
             "\n========================================\n"
