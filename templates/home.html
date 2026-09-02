@@ -978,7 +978,13 @@
     <div class="gallery-grid">
         {% for image in gallery_images %}
         <div class="gallery-item">
-            <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
+            {% if image.image %}
+                <img src="{% url 'serve_binary' 'GalleryImage' image.id 'image' %}" alt="{{ image.title }}">
+            {% elif image.image_url %}
+                <img src="{{ image.image_url }}" alt="{{ image.title }}" onerror="this.closest('.gallery-item').style.display='none'">
+            {% else %}
+                <img src="https://placehold.co/400x300/667eea/white?text=No+Image" alt="{{ image.title }}">
+            {% endif %}
             <div class="gallery-overlay">
                 <h4>{{ image.title }}</h4>
                 <p>{{ image.category }}</p>
