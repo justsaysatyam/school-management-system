@@ -228,3 +228,235 @@ class DigitalSignatureTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://example.com/teacher2_sig.png")
 
+
+class AdminChangeCredentialsTestCase(TestCase):
+    """Test suite for Admin change credentials flow."""
+
+    def setUp(self):
+        self.client = Client()
+        self.email = "test_bhanu@midpointschool.online"
+        self.username = "Test_Bhanu_Admin"
+        self.password = "admin@123"
+        self.telegram_chat_id = "1949979666"
+
+        self.user, _ = User.objects.get_or_create(
+            username=self.username,
+            defaults={
+                'email': self.email,
+                'is_staff': True,
+                'is_superuser': True,
+            }
+        )
+        self.user.set_password(self.password)
+        self.user.save()
+
+        self.profile, _ = AdminProfile.objects.get_or_create(
+            user=self.user,
+            defaults={'telegram_chat_id': self.telegram_chat_id}
+        )
+        self.profile.telegram_chat_id = self.telegram_chat_id
+        self.profile.save()
+
+        self.admin_obj, _ = Admin.objects.get_or_create(
+            email=self.email,
+            defaults={
+                'name': "Bhanu Kumar Singh",
+                'role': "Administrator",
+            }
+        )
+        self.admin_obj.set_password(self.password)
+        self.admin_obj.save()
+
+    def test_change_credentials_case_insensitive_username(self):
+        """Entering lowercase username should successfully authenticate and send OTP."""
+        session = self.client.session
+        session['user_type'] = 'admin'
+        session.save()
+
+        from unittest.mock import patch
+        with patch('core.views.send_telegram_otp', return_value=(True, "OK")):
+            response = self.client.post(reverse('admin_change_credentials'), {
+                'current_username': 'test_bhanu_admin',  # Lowercase
+                'current_password': self.password,
+                'new_password': 'NewPassword@123',
+                'confirm_password': 'NewPassword@123',
+            })
+            self.assertRedirects(response, reverse('admin_change_credentials_verify_otp'), fetch_redirect_response=False)
+            self.assertEqual(self.client.session.get('creds_change_user_id'), self.user.id)
+
+    def test_change_credentials_via_email(self):
+        """Entering email should successfully authenticate and send OTP."""
+        session = self.client.session
+        session['user_type'] = 'admin'
+        session.save()
+
+        from unittest.mock import patch
+        with patch('core.views.send_telegram_otp', return_value=(True, "OK")):
+            response = self.client.post(reverse('admin_change_credentials'), {
+                'current_username': self.email,
+                'current_password': self.password,
+                'new_username': 'Bhanu_new',
+                'new_password': 'NewPassword@123',
+                'confirm_password': 'NewPassword@123',
+            })
+            self.assertRedirects(response, reverse('admin_change_credentials_verify_otp'), fetch_redirect_response=False)
+
+    def test_verify_otp_updates_user_and_admin_model(self):
+        """Verifying OTP applies password and username updates across User and Admin models."""
+        session = self.client.session
+        session['user_type'] = 'admin'
+        session['creds_change_user_id'] = self.user.id
+        session['creds_change_new_username'] = 'Bhanu_new'
+        session['creds_change_new_password'] = 'NewPassword@123'
+        session['creds_change_otp'] = '112233'
+        session['creds_change_otp_expires'] = int(time.time()) + 300
+        session.save()
+
+        response = self.client.post(reverse('admin_change_credentials_verify_otp'), {
+            'otp_code': '112233',
+        })
+        self.assertRedirects(response, reverse('admin_login'), fetch_redirect_response=False)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'Bhanu_new')
+        self.assertTrue(self.user.check_password('NewPassword@123'))
+
+        self.admin_obj.refresh_from_db()
+        self.assertTrue(self.admin_obj.check_password('NewPassword@123'))
+
+
+class TelegramAlertsTestCase(TestCase):
+    """Test suite for Telegram alert dispatching (Inquiries & Complaints)"""
+
+    def setUp(self):
+        from unittest.mock import patch
+        self.client = Client()
+        self.admin_user = User.objects.create_user(
+            username="admin_notif_test",
+            email="admin_notif@test.com",
+            password="Password123!",
+            is_staff=True
+        )
+        self.profile, _ = AdminProfile.objects.get_or_create(user=self.admin_user)
+        self.profile.telegram_chat_id = "987654321"
+        self.profile.save()
+
+    def test_send_telegram_message_success(self):
+        """send_telegram_message returns True when Telegram API responds ok."""
+        from unittest.mock import patch, MagicMock
+        from core.utils import send_telegram_message
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"ok": True, "result": {"message_id": 12345}}
+
+        with patch('requests.post', return_value=mock_resp):
+            success, info = send_telegram_message("987654321", "Test Message")
+            self.assertTrue(success)
+            self.assertEqual(info, "12345")
+
+    def test_send_inquiry_telegram_alert_broadcasts_to_admins(self):
+        """send_inquiry_telegram_alert dispatches messages to all registered admin chat IDs."""
+        from unittest.mock import patch
+        from core.utils import send_inquiry_telegram_alert
+        from core.models import Inquiry
+
+        inquiry = Inquiry.objects.create(
+            name="Aarav Sharma",
+            email="aarav@example.com",
+            mobile="9876543210",
+            subject="Class 11 Admission",
+            message="Looking for commerce admission details."
+        )
+
+        expected_count = AdminProfile.objects.exclude(telegram_chat_id__isnull=True).exclude(telegram_chat_id__exact='').count()
+        with patch('core.utils.send_telegram_message', return_value=(True, "101")) as mock_send:
+            results = send_inquiry_telegram_alert(inquiry)
+            self.assertEqual(results['total'], expected_count)
+            self.assertEqual(results['sent'], expected_count)
+            self.assertEqual(results['failed'], 0)
+            self.assertEqual(mock_send.call_count, expected_count)
+            # Verify our test admin received the alert with details
+            admin_call_found = any(c[0][0] == "987654321" and "Aarav Sharma" in c[0][1] and "Class 11 Admission" in c[0][1] for c in mock_send.call_args_list)
+            self.assertTrue(admin_call_found)
+
+    def test_send_complaint_telegram_alert_broadcasts_to_admins(self):
+        """send_complaint_telegram_alert dispatches messages to all registered admin chat IDs."""
+        from unittest.mock import patch
+        from datetime import date
+        from core.utils import send_complaint_telegram_alert
+        from core.models import SchoolClass, Student, Complaint
+
+        school_class = SchoolClass.objects.create(class_name="10", section="A")
+        student = Student.objects.create(
+            name="Rohan Verma",
+            father_name="Sanjay Verma",
+            student_class=school_class,
+            mobile="9876500000",
+            admission_date=date.today()
+        )
+        complaint = Complaint.objects.create(
+            student=student,
+            subject="Library Book Availability",
+            description="Physics reference books are out of stock in the library."
+        )
+
+        expected_count = AdminProfile.objects.exclude(telegram_chat_id__isnull=True).exclude(telegram_chat_id__exact='').count()
+        with patch('core.utils.send_telegram_message', return_value=(True, "102")) as mock_send:
+            results = send_complaint_telegram_alert(complaint)
+            self.assertEqual(results['total'], expected_count)
+            self.assertEqual(results['sent'], expected_count)
+            self.assertEqual(results['failed'], 0)
+            self.assertEqual(mock_send.call_count, expected_count)
+            # Verify our test admin received the complaint alert with details
+            admin_call_found = any(c[0][0] == "987654321" and "Rohan Verma" in c[0][1] and "Library Book Availability" in c[0][1] for c in mock_send.call_args_list)
+            self.assertTrue(admin_call_found)
+
+    def test_inquiry_submission_triggers_telegram_alert(self):
+        """Submitting the public inquiry form triggers send_inquiry_telegram_alert."""
+        from unittest.mock import patch
+        with patch('core.views.send_inquiry_telegram_alert') as mock_alert:
+            response = self.client.post(reverse('home'), {
+                'inquiry_submit': '1',
+                'name': 'Pooja Patel',
+                'email': 'pooja@example.com',
+                'mobile': '9876543211',
+                'subject': 'Fee Structure',
+                'message': 'Please share class 9 fee details.'
+            })
+            self.assertRedirects(response, reverse('home'))
+            mock_alert.assert_called_once()
+            inquiry_obj = mock_alert.call_args[0][0]
+            self.assertEqual(inquiry_obj.name, 'Pooja Patel')
+
+    def test_student_complaint_submission_triggers_telegram_alert(self):
+        """Submitting student complaint form triggers send_complaint_telegram_alert."""
+        from unittest.mock import patch
+        from datetime import date
+        from core.models import SchoolClass, Student
+
+        school_class = SchoolClass.objects.create(class_name="9", section="B")
+        student = Student.objects.create(
+            name="Amit Kumar",
+            father_name="Rajesh Kumar",
+            student_class=school_class,
+            mobile="9876511111",
+            admission_date=date.today()
+        )
+
+        session = self.client.session
+        session['user_type'] = 'student'
+        session['student_id'] = student.id
+        session.save()
+
+        with patch('core.views.send_complaint_telegram_alert') as mock_alert:
+            response = self.client.post(reverse('student_complaints'), {
+                'subject': 'Classroom Projector Issue',
+                'description': 'The projector in 9-B is flickering during science class.'
+            })
+            self.assertRedirects(response, reverse('student_complaints'))
+            mock_alert.assert_called_once()
+            complaint_obj = mock_alert.call_args[0][0]
+            self.assertEqual(complaint_obj.subject, 'Classroom Projector Issue')
+
+

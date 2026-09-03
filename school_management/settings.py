@@ -171,6 +171,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
 ]
 
-# Telegram Bot 2FA Settings
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+# Telegram Bot 2FA & Notification Settings
+TELEGRAM_BOT_TOKEN = (os.environ.get('TELEGRAM_BOT_TOKEN') or '8922551001:AAFgIZkymE0UGzmm0wOjhYfPZEcMB8m43oA').strip()
+TELEGRAM_BOT_USERNAME = (os.environ.get('TELEGRAM_BOT_USERNAME') or 'School_sms_auth_bot').strip()
 

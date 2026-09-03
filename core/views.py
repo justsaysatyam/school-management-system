@@ -1,5 +1,8 @@
 import time
+import logging
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
@@ -23,8 +26,11 @@ from .forms import (
     ComplaintForm, ComplaintResolveForm, InquiryForm,
     TeacherSignatureForm, SchoolSettingsForm
 )
-from django.contrib.auth.hashers import make_password
-from .utils import generate_otp, send_telegram_otp, can_resend_otp
+from .utils import (
+    generate_otp, send_telegram_otp, can_resend_otp,
+    send_inquiry_telegram_alert, send_complaint_telegram_alert,
+    send_telegram_message
+)
 
 
 def get_class_teacher_for_student(student):
@@ -64,7 +70,11 @@ def home(request):
     if request.method == 'POST' and 'inquiry_submit' in request.POST:
         form = InquiryForm(request.POST)
         if form.is_valid():
-            form.save()
+            inquiry = form.save()
+            try:
+                send_inquiry_telegram_alert(inquiry)
+            except Exception as e:
+                logger.error(f"Error dispatching Telegram inquiry alert: {e}")
             messages.success(request, 'Your inquiry has been submitted successfully. We will contact you soon!')
             return redirect('home')
     else:
@@ -105,7 +115,11 @@ def contact_us(request):
     if request.method == 'POST' and 'inquiry_submit' in request.POST:
         form = InquiryForm(request.POST)
         if form.is_valid():
-            form.save()
+            inquiry = form.save()
+            try:
+                send_inquiry_telegram_alert(inquiry)
+            except Exception as e:
+                logger.error(f"Error dispatching Telegram inquiry alert: {e}")
             messages.success(request, 'Your inquiry has been submitted successfully! We will get back to you shortly.')
             return redirect('contact_us')
         else:
@@ -371,6 +385,12 @@ def admin_register_telegram(request):
         'user_name': user.get_full_name() or user.username,
     }
     return render(request, 'admin_portal/register_telegram.html', context)
+
+
+# Standard view aliases for specification compliance
+admin_login_view = admin_login
+admin_verify_otp_view = admin_verify_otp
+admin_register_telegram_view = admin_register_telegram
 
 
 
@@ -1997,6 +2017,10 @@ def student_complaints(request):
             complaint = form.save(commit=False)
             complaint.student = student
             complaint.save()
+            try:
+                send_complaint_telegram_alert(complaint)
+            except Exception as e:
+                logger.error(f"Error dispatching Telegram complaint alert: {e}")
             messages.success(request, 'Complaint submitted successfully')
             return redirect('student_complaints')
     else:
@@ -2617,7 +2641,12 @@ def admin_marquee_manager(request):
 
 def admin_change_credentials(request):
     """
-    Step 1 — Admin verifies current username+password, then triggers OTP to Telegram.
+    Step 1 — Admin verifies current username/email + password, then triggers OTP to Telegram.
+    Robustly handles:
+    - Case-insensitive username & email matches
+    - Legacy Admin model records & Django auth User synchronization
+    - Authenticated session admin fallback
+    - Ensuring AdminProfile exists with Telegram chat ID
     """
     if request.session.get('user_type') != 'admin':
         return redirect('admin_login')
@@ -2630,8 +2659,11 @@ def admin_change_credentials(request):
         confirm_password = request.POST.get('confirm_password', '').strip()
 
         # Validate new password match
-        if new_password != confirm_password:
+        if new_password and confirm_password and new_password != confirm_password:
             messages.error(request, 'New password and confirm password do not match.')
+            return render(request, 'admin_portal/change_credentials.html', {})
+        elif new_password and not confirm_password:
+            messages.error(request, 'Please confirm your new password.')
             return render(request, 'admin_portal/change_credentials.html', {})
 
         if not new_username and not new_password:
@@ -2639,21 +2671,94 @@ def admin_change_credentials(request):
             return render(request, 'admin_portal/change_credentials.html', {})
 
         # Verify current credentials
-        user = authenticate(username=current_username, password=current_password)
+        user = None
+
+        # 1. Search candidate by username (case-insensitive) or email (case-insensitive)
+        user_candidate = None
+        if current_username:
+            user_candidate = User.objects.filter(username__iexact=current_username).first()
+            if not user_candidate:
+                user_candidate = User.objects.filter(email__iexact=current_username).first()
+
+        # 2. If request.user is authenticated, check if current_username matches request.user
+        if not user_candidate and request.user.is_authenticated:
+            if not current_username or current_username.lower() in (
+                request.user.username.lower(),
+                (request.user.email or '').lower()
+            ):
+                user_candidate = request.user
+
+        # 3. Check legacy Admin model candidate
+        admin_candidate = None
+        if not user_candidate and current_username:
+            admin_candidate = Admin.objects.filter(email__iexact=current_username).first()
+            if not admin_candidate:
+                admin_candidate = Admin.objects.filter(name__iexact=current_username).first()
+
+        # Step A: Validate password on user_candidate
+        if user_candidate:
+            if user_candidate.check_password(current_password):
+                user = user_candidate
+            else:
+                # Check if password in legacy Admin record matches
+                admin_obj = Admin.objects.filter(email__iexact=user_candidate.email).first()
+                if admin_obj and admin_obj.check_password(current_password):
+                    user_candidate.set_password(current_password)
+                    user_candidate.save()
+                    user = user_candidate
+                else:
+                    auth_user = authenticate(username=user_candidate.username, password=current_password)
+                    if auth_user:
+                        user = auth_user
+
+        # Step B: If not validated yet, validate on admin_candidate
+        if user is None and admin_candidate:
+            if admin_candidate.check_password(current_password):
+                username_part = admin_candidate.email.split('@')[0] if '@' in admin_candidate.email else admin_candidate.email
+                user = User.objects.filter(email__iexact=admin_candidate.email).first()
+                if not user:
+                    user, _ = User.objects.get_or_create(
+                        username=username_part,
+                        defaults={
+                            'email': admin_candidate.email,
+                            'first_name': admin_candidate.name,
+                            'is_staff': True,
+                            'is_superuser': True,
+                        }
+                    )
+                user.set_password(current_password)
+                user.email = admin_candidate.email
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+
+        # Step C: Fallback to logged-in request.user password check
+        if user is None and request.user.is_authenticated:
+            if request.user.check_password(current_password):
+                user = request.user
+
+        # Step D: Fallback to session admin_id
         if user is None:
-            # Try email-based auth
-            user_obj = User.objects.filter(email=current_username).first()
-            if user_obj and user_obj.check_password(current_password):
-                user = user_obj
+            admin_id = request.session.get('admin_id')
+            if admin_id:
+                admin_rec = Admin.objects.filter(id=admin_id).first()
+                if admin_rec and admin_rec.check_password(current_password):
+                    user = User.objects.filter(email__iexact=admin_rec.email).first()
+                    if user:
+                        user.set_password(current_password)
+                        user.save()
 
         if user is None:
             messages.error(request, 'Current username or password is incorrect. Please try again.')
             return render(request, 'admin_portal/change_credentials.html', {})
 
-        # Get Telegram profile for OTP
-        profile = getattr(user, 'admin_profile', None)
-        if not profile or not profile.telegram_chat_id:
-            messages.error(request, 'No Telegram account linked. Cannot send OTP for verification.')
+        # Get or create AdminProfile for OTP
+        profile, _ = AdminProfile.objects.get_or_create(user=user)
+        if not profile.telegram_chat_id:
+            messages.error(
+                request,
+                f'No Telegram account linked for {user.username} ({user.email}). Cannot send OTP for verification. Please link your Telegram first in Admin Settings / Login.'
+            )
             return render(request, 'admin_portal/change_credentials.html', {})
 
         # Generate OTP and store pending changes in session
@@ -2667,9 +2772,10 @@ def admin_change_credentials(request):
 
         success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
         if success:
-            messages.success(request, 'A 6-digit OTP has been sent to your Telegram. Please verify to complete the change.')
+            masked_chat = f"...{profile.telegram_chat_id[-3:]}" if len(profile.telegram_chat_id) > 3 else profile.telegram_chat_id
+            messages.success(request, f'A 6-digit OTP has been sent to your Telegram (Chat ID ending {masked_chat}). Please verify to complete the change.')
         else:
-            messages.warning(request, f'Could not send OTP via Telegram: {msg}. Please try again.')
+            messages.warning(request, f'Could not send OTP via Telegram: {msg}. Please check Telegram bot connectivity.')
             for key in ('creds_change_user_id', 'creds_change_new_username', 'creds_change_new_password', 'creds_change_otp', 'creds_change_otp_expires'):
                 request.session.pop(key, None)
             return render(request, 'admin_portal/change_credentials.html', {})
@@ -2693,7 +2799,7 @@ def admin_change_credentials_verify_otp(request):
 
     if request.method == 'POST':
         entered_otp = request.POST.get('otp_code', '').strip()
-        session_otp = request.session.get('creds_change_otp', '')
+        session_otp = str(request.session.get('creds_change_otp', '')).strip()
         expires_at = request.session.get('creds_change_otp_expires', 0)
         now_ts = int(time.time())
 
@@ -2714,18 +2820,22 @@ def admin_change_credentials_verify_otp(request):
             new_password = request.session.get('creds_change_new_password', '')
 
             if new_username:
-                # Check uniqueness
-                if User.objects.filter(username=new_username).exclude(id=user.id).exists():
+                # Check uniqueness (case-insensitive)
+                if User.objects.filter(username__iexact=new_username).exclude(id=user.id).exists():
                     messages.error(request, f'Username "{new_username}" is already taken. Please choose another.')
                     return render(request, 'admin_portal/change_credentials_otp.html', {})
                 user.username = new_username
+                if '@' in new_username:
+                    user.email = new_username
 
             if new_password:
                 user.set_password(new_password)
                 # Also update Admin model password if exists
-                admin_obj = Admin.objects.filter(email=user.email).first()
-                if admin_obj:
+                admin_objs = Admin.objects.filter(email__iexact=user.email)
+                for admin_obj in admin_objs:
                     admin_obj.set_password(new_password)
+                    if new_username and '@' in new_username:
+                        admin_obj.email = new_username
                     admin_obj.save()
 
             user.save()

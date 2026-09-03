@@ -4,6 +4,10 @@ from django.contrib.auth.hashers import make_password, check_password
 from decimal import Decimal
 
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
 class AdminProfile(models.Model):
     """Profile for Django User model to support 2FA via Telegram Bot"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
@@ -26,6 +30,13 @@ class AdminProfile(models.Model):
 
     def __str__(self):
         return f"AdminProfile({self.user.username}) | Telegram: {self.telegram_chat_id or 'Not Linked'}"
+
+
+@receiver(post_save, sender=User)
+def create_or_update_admin_profile(sender, instance, created, **kwargs):
+    """Automatically create or guarantee an AdminProfile exists for staff/superuser users."""
+    if instance.is_staff or instance.is_superuser:
+        AdminProfile.objects.get_or_create(user=instance)
 
 
 
