@@ -398,6 +398,9 @@
                 
                 <div class="school-info">
                     <h1 class="school-name">{{ school_info.name|default:"MID POINT SCHOOL" }}</h1>
+                    <div class="school-reg-info" style="font-size: {% if schedules|length > 10 %}11px{% else %}12px{% endif %}; font-weight: 700; color: var(--primary-dark); letter-spacing: 0.5px; margin: 1px 0 3px 0;">
+                        UDISE- 10251405002 &nbsp;|&nbsp; REG- LKR053
+                    </div>
                     <p class="school-address">{{ school_info.address|default:"School Address goes here" }}</p>
                     <p class="school-address">Phone: {{ school_info.phone|default:"N/A" }} | Email: {{ school_info.email|default:"N/A" }}</p>
                     <div class="title-badge">EXAMINATION ADMIT CARD</div>
