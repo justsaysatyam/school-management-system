@@ -2001,6 +2001,81 @@ def result_download(request):
     return render(request, 'teacher/result_download.html', context)
 
 
+def teacher_bulk_result_pdf(request):
+    """Teacher/Admin view to download verified results for an entire class in a single printable PDF"""
+    user_type = request.session.get('user_type')
+    if user_type not in ('teacher', 'admin'):
+        return redirect('teacher_login')
+    
+    class_id = request.GET.get('class_id')
+    exam_name = request.GET.get('exam', '').strip()
+    
+    if not class_id or not exam_name:
+        messages.error(request, 'Please select both class and exam to download class results.')
+        return redirect('result_download')
+        
+    school_class = get_object_or_404(SchoolClass, pk=class_id)
+    
+    # Permission check for teacher
+    if user_type == 'teacher':
+        teacher_id = request.session.get('teacher_id')
+        teacher = get_object_or_404(Teacher, pk=teacher_id)
+        if teacher.class_section.exists() and not teacher.class_section.filter(pk=class_id).exists():
+            messages.error(request, 'You can only download results for your assigned classes.')
+            return redirect('result_download')
+    
+    # Get active students for this class
+    students = Student.objects.filter(student_class=school_class, is_active=True).order_by('name')
+    
+    grade_config = GradeConfig.get_config()
+    school_info = SchoolInfo.objects.first()
+    
+    student_results = []
+    
+    for student in students:
+        # CRITICAL: Only VERIFIED results
+        results = Result.objects.filter(
+            student=student,
+            exam_name=exam_name,
+            verification_status='Verified'
+        ).select_related('subject').order_by('subject__subject_name')
+        
+        if not results.exists():
+            continue  # Only include students with verified results
+            
+        total_marks_obtained = sum(r.marks_obtained for r in results)
+        total_marks_total = sum(r.total_marks for r in results)
+        overall_percentage = (total_marks_obtained / total_marks_total * 100) if total_marks_total > 0 else 0
+        overall_grade = grade_config.get_grade(overall_percentage)
+        result_status = 'PASS' if overall_percentage >= grade_config.pass_percentage else 'FAIL'
+        
+        student_results.append({
+            'student': student,
+            'results': results,
+            'total_subjects': results.count(),
+            'total_marks_obtained': total_marks_obtained,
+            'total_marks_total': total_marks_total,
+            'overall_percentage': overall_percentage,
+            'overall_grade': overall_grade,
+            'result_status': result_status,
+            'class_teacher': get_class_teacher_for_student(student),
+        })
+        
+    if not student_results:
+        messages.error(request, f'No verified results found for {school_class.class_name} - {school_class.section} in exam "{exam_name}". Results must be verified by admin before downloading.')
+        return redirect('result_download')
+        
+    context = {
+        'school_class': school_class,
+        'exam_name': exam_name,
+        'student_results': student_results,
+        'total_students_count': len(student_results),
+        'school_info': school_info,
+        'grade_config': grade_config,
+    }
+    return render(request, 'teacher/bulk_result_pdf.html', context)
+
+
 # ===================== COMPLAINT MANAGEMENT =====================
 
 def student_complaints(request):
@@ -2440,6 +2515,55 @@ def teacher_admit_card_schedule(request, request_id):
         'subjects': subjects,
         'teacher': teacher
     })
+
+
+def teacher_bulk_admit_card_pdf(request, request_id):
+    """Teacher/Admin view to download all admit cards for a class in a single printable PDF"""
+    user_type = request.session.get('user_type')
+    if user_type not in ('teacher', 'admin'):
+        return redirect('teacher_login')
+        
+    ac_request = get_object_or_404(AdmitCardRequest, pk=request_id)
+    
+    # Teacher permission check
+    if user_type == 'teacher':
+        teacher_id = request.session.get('teacher_id')
+        teacher = get_object_or_404(Teacher, pk=teacher_id)
+        if teacher.class_section.exists() and not teacher.class_section.filter(pk=ac_request.school_class_id).exists():
+            messages.error(request, 'You can only download admit cards for your assigned class.')
+            return redirect('teacher_admit_card_requests')
+            
+    # CRITICAL: Must be published!
+    if not ac_request.is_published:
+        messages.error(request, 'Admit cards can only be downloaded after the exam schedule is published.')
+        return redirect('teacher_admit_card_requests')
+        
+    # Get active students in this class
+    students = Student.objects.filter(student_class=ac_request.school_class, is_active=True).order_by('name')
+    if not students.exists():
+        messages.error(request, f'No active students found in {ac_request.school_class}.')
+        return redirect('teacher_admit_card_requests')
+        
+    schedules = ExamSchedule.objects.filter(admit_card_request=ac_request).order_by('exam_date', 'start_time')
+    school_info = SchoolInfo.objects.first()
+    
+    student_cards = []
+    for student in students:
+        student_cards.append({
+            'student': student,
+            'class_teacher': get_class_teacher_for_student(student),
+        })
+        
+    context = {
+        'ac_request': ac_request,
+        'school_class': ac_request.school_class,
+        'schedules': schedules,
+        'student_cards': student_cards,
+        'school_info': school_info,
+        'total_students': len(student_cards),
+    }
+    return render(request, 'teacher/bulk_admit_card_pdf.html', context)
+
 
 # ===================== ADMIT CARD (PUBLIC) =====================
 

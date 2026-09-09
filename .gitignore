@@ -16,3 +16,6 @@ env/
 # Compiled files
 *.pyc
 *.pyo
+
+# Local scripts
+scripts/

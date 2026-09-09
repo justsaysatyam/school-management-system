@@ -22,6 +22,7 @@
                 <table class="table">
                     <thead>
                         <tr>
+                            <th>Class</th>
                             <th>Exam Term</th>
                             <th>Status</th>
                             <th>Date Issued</th>
@@ -31,7 +32,8 @@
                     <tbody>
                         {% for req in requests %}
                         <tr>
-                            <td><strong>{{ req.exam_term.name }}</strong></td>
+                            <td><strong>{{ req.school_class }}</strong></td>
+                            <td>{{ req.exam_term.name }}</td>
                             <td>
                                 {% if req.is_published %}
                                 <span class="badge badge-success">Published</span>
@@ -41,14 +43,21 @@
                             </td>
                             <td>{{ req.created_at|date:"M d, Y" }}</td>
                             <td>
-                                <a href="{% url 'teacher_admit_card_schedule' req.id %}" class="btn btn-sm btn-primary">
-                                    {% if req.is_published %}View / Edit Schedule{% else %}Set Schedule{% endif %}
-                                </a>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                    <a href="{% url 'teacher_admit_card_schedule' req.id %}" class="btn btn-sm btn-primary">
+                                        {% if req.is_published %}✏️ Schedule{% else %}📅 Set Schedule{% endif %}
+                                    </a>
+                                    {% if req.is_published %}
+                                    <a href="{% url 'teacher_bulk_admit_card_pdf' req.id %}" target="_blank" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                                        📥 Download All Admit Cards (1 PDF)
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">No admit card requests for your class.</td>
+                            <td colspan="5" class="text-center text-muted">No admit card requests for your class.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

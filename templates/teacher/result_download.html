@@ -200,85 +200,160 @@
     {% endif %}
 
     <div class="form-card">
-        <h2>📋 Select Student &amp; Exam</h2>
-        <form id="resultForm" method="GET" action="">
+        <!-- Mode Tabs -->
+        <div style="display: flex; gap: 10px; margin-bottom: 2rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 12px;">
+            <button type="button" id="tabBulkBtn" class="tab-btn active" onclick="switchTab('bulk')" style="padding: 10px 20px; border: none; background: #667eea; color: white; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                📦 Entire Class Results (1 PDF)
+            </button>
+            <button type="button" id="tabSingleBtn" class="tab-btn" onclick="switchTab('single')" style="padding: 10px 20px; border: 1px solid #d0d0d0; background: white; color: #555; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                👤 Single Student Result
+            </button>
+        </div>
 
-            <!-- Search & Filter Section -->
-            <div style="display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap;">
-                <div style="flex: 2; min-width: 200px;">
-                    <label for="searchName"
-                        style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; font-size: 0.95rem;">🔍
-                        Search by Name</label>
-                    <input type="text" id="searchName" placeholder="Type student name..." autocomplete="off"
-                        style="width: 100%; padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s; background: white; outline: none;"
-                        onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.15)'"
-                        onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'"
-                        oninput="filterStudents()">
-                </div>
-                <div style="flex: 1; min-width: 150px;">
-                    <label for="filterClass"
-                        style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; font-size: 0.95rem;">🏫
-                        Filter by Class</label>
-                    <select id="filterClass" onchange="filterStudents()"
-                        style="width: 100%; padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s; background: white; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 12 12&quot;%3E%3Cpath fill=&quot;%23667eea&quot; d=&quot;M6 8L1 3h10z&quot;/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 1rem center;">
-                        <option value="">All Classes</option>
+        <!-- Section 1: Bulk Class Results -->
+        <div id="bulkSection">
+            <h2>📦 Download Entire Class Results (1 PDF)</h2>
+            <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Download marksheets for all students in your class for a selected exam. All students will be combined into a single, perfectly formatted PDF.
+            </p>
+            <form method="GET" action="{% url 'teacher_bulk_result_pdf' %}" target="_blank">
+                <div class="form-group">
+                    <label for="bulkClass">🏫 Select Class *</label>
+                    <select name="class_id" id="bulkClass" required>
+                        <option value="">-- Choose Class --</option>
                         {% for cls in classes %}
                         <option value="{{ cls.id }}">{{ cls.class_name }} - {{ cls.section }}</option>
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label for="bulkExam">📝 Select Exam *</label>
+                    <select name="exam" id="bulkExam" required>
+                        <option value="">-- Choose Exam --</option>
+                        {% for exam in exam_names %}
+                        <option value="{{ exam }}">{{ exam }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="info-box" style="margin-top: 0; margin-bottom: 1.5rem; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">
+                    <strong>ℹ️ Note on Verification:</strong> Only results that are <strong>Verified</strong> (approved by admin) will be included in the PDF. Each student will be on their own page in the single PDF.
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    📥 Download Class Results (All in 1 PDF)
+                </button>
+            </form>
+        </div>
+
+        <!-- Section 2: Single Student Result -->
+        <div id="singleSection" style="display: none;">
+            <h2>👤 Select Individual Student &amp; Exam</h2>
+            <form id="resultForm" method="GET" action="" target="_blank">
+
+                <!-- Search & Filter Section -->
+                <div style="display: flex; gap: 12px; margin-bottom: 1.2rem; flex-wrap: wrap;">
+                    <div style="flex: 2; min-width: 200px;">
+                        <label for="searchName"
+                            style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; font-size: 0.95rem;">🔍
+                            Search by Name</label>
+                        <input type="text" id="searchName" placeholder="Type student name..." autocomplete="off"
+                            style="width: 100%; padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s; background: white; outline: none;"
+                            onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.15)'"
+                            onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'"
+                            oninput="filterStudents()">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label for="filterClass"
+                            style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; font-size: 0.95rem;">🏫
+                            Filter by Class</label>
+                        <select id="filterClass" onchange="filterStudents()"
+                            style="width: 100%; padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s; background: white; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 12 12&quot;%3E%3Cpath fill=&quot;%23667eea&quot; d=&quot;M6 8L1 3h10z&quot;/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 1rem center;">
+                            <option value="">All Classes</option>
+                            {% for cls in classes %}
+                            <option value="{{ cls.id }}">{{ cls.class_name }} - {{ cls.section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Student Count Badge -->
+                <div id="studentCount" style="margin-bottom: 0.8rem; font-size: 0.85rem; color: #667eea; font-weight: 600;">
+                    📊 Showing all students
+                </div>
+
+                <div class="form-group">
+                    <label for="student">👨‍🎓 Select Student *</label>
+                    <select name="student" id="student" onchange="updatePreview()">
+                        <option value="">-- Choose a Student --</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}" data-name="{{ student.name }}"
+                            data-class-id="{{ student.student_class_id|default:'' }}"
+                            data-class="{{ student.student_class|default:'N/A' }}" data-father="{{ student.father_name }}">
+                            {{ student.name }} — {{ student.student_class|default:"No Class" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="exam">📝 Select Exam *</label>
+                    <select name="exam" id="exam" onchange="updatePreview()">
+                        <option value="">-- Choose an Exam --</option>
+                        {% for exam in exam_names %}
+                        <option value="{{ exam }}">{{ exam }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="preview-info" id="previewInfo">
+                    <h3>📌 Selected Details</h3>
+                    <p><strong>Student:</strong> <span id="prevName">-</span></p>
+                    <p><strong>Class:</strong> <span id="prevClass">-</span></p>
+                    <p><strong>Father's Name:</strong> <span id="prevFather">-</span></p>
+                    <p><strong>Exam:</strong> <span id="prevExam">-</span></p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    📄 Generate Result PDF
+                </button>
+            </form>
+
+            <div class="info-box">
+                <strong>ℹ️ Note:</strong> Only <strong>verified results</strong> (approved by admin) will appear in the PDF.
             </div>
-
-            <!-- Student Count Badge -->
-            <div id="studentCount" style="margin-bottom: 0.8rem; font-size: 0.85rem; color: #667eea; font-weight: 600;">
-                📊 Showing all students
-            </div>
-
-            <div class="form-group">
-                <label for="student">👨‍🎓 Select Student *</label>
-                <select name="student" id="student" required onchange="updatePreview()">
-                    <option value="">-- Choose a Student --</option>
-                    {% for student in students %}
-                    <option value="{{ student.id }}" data-name="{{ student.name }}"
-                        data-class-id="{{ student.student_class_id|default:'' }}"
-                        data-class="{{ student.student_class|default:'N/A' }}" data-father="{{ student.father_name }}">
-                        {{ student.name }} — {{ student.student_class|default:"No Class" }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="exam">📝 Select Exam *</label>
-                <select name="exam" id="exam" required onchange="updatePreview()">
-                    <option value="">-- Choose an Exam --</option>
-                    {% for exam in exam_names %}
-                    <option value="{{ exam }}">{{ exam }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="preview-info" id="previewInfo">
-                <h3>📌 Selected Details</h3>
-                <p><strong>Student:</strong> <span id="prevName">-</span></p>
-                <p><strong>Class:</strong> <span id="prevClass">-</span></p>
-                <p><strong>Father's Name:</strong> <span id="prevFather">-</span></p>
-                <p><strong>Exam:</strong> <span id="prevExam">-</span></p>
-            </div>
-
-            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
-                📄 Generate Result PDF
-            </button>
-        </form>
-
-        <div class="info-box">
-            <strong>ℹ️ Note:</strong> Only <strong>verified results</strong> (approved by admin) will appear in the PDF.
-            Make sure all subject results for the selected exam have been submitted and verified before downloading.
         </div>
     </div>
 </div>
 
 <script>
+    function switchTab(tab) {
+        const bulkSec = document.getElementById('bulkSection');
+        const singleSec = document.getElementById('singleSection');
+        const tabBulkBtn = document.getElementById('tabBulkBtn');
+        const tabSingleBtn = document.getElementById('tabSingleBtn');
+
+        if (tab === 'bulk') {
+            bulkSec.style.display = 'block';
+            singleSec.style.display = 'none';
+            tabBulkBtn.style.background = '#667eea';
+            tabBulkBtn.style.color = 'white';
+            tabBulkBtn.style.border = 'none';
+            tabSingleBtn.style.background = 'white';
+            tabSingleBtn.style.color = '#555';
+            tabSingleBtn.style.border = '1px solid #d0d0d0';
+        } else {
+            bulkSec.style.display = 'none';
+            singleSec.style.display = 'block';
+            tabSingleBtn.style.background = '#667eea';
+            tabSingleBtn.style.color = 'white';
+            tabSingleBtn.style.border = 'none';
+            tabBulkBtn.style.background = 'white';
+            tabBulkBtn.style.color = '#555';
+            tabBulkBtn.style.border = '1px solid #d0d0d0';
+        }
+    }
     // Store all student options for filtering
     const studentSelect = document.getElementById('student');
     const allStudents = [];

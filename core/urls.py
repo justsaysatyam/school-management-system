@@ -102,6 +102,7 @@ urlpatterns = [
     # Result PDF Download (Teacher Portal)
     path('teacher/results/download/', views.result_download, name='result_download'),
     path('teacher/results/pdf/<int:student_id>/', views.result_pdf, name='teacher_result_pdf'),
+    path('teacher/results/bulk-pdf/', views.teacher_bulk_result_pdf, name='teacher_bulk_result_pdf'),
     
     # Admit Card Management (Admin)
     path('admin/admit-cards/', views.admin_admit_card_list, name='admin_admit_card_list'),
@@ -111,6 +112,7 @@ urlpatterns = [
     # Admit Card Management (Teacher)
     path('teacher/admit-cards/', views.teacher_admit_card_requests, name='teacher_admit_card_requests'),
     path('teacher/admit-cards/<int:request_id>/schedule/', views.teacher_admit_card_schedule, name='teacher_admit_card_schedule'),
+    path('teacher/admit-cards/<int:request_id>/bulk-pdf/', views.teacher_bulk_admit_card_pdf, name='teacher_bulk_admit_card_pdf'),
     
     # Admit Card (Public Portal)
     path('admit-card/', views.public_admit_card_search, name='public_admit_card_search'),

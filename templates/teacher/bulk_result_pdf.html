@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Results - {{ school_class }} - {{ exam_name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e8ecf1;
+            padding: 20px 0;
+            color: #333;
+        }
+
+        /* Controls */
+        .controls {
+            max-width: 800px;
+            margin: 0 auto 1.5rem auto;
+            padding: 0 15px;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .controls-info {
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .controls-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        /* Print Page Setup */
+        .print-page {
+            max-width: 800px;
+            margin: 0 auto 2.5rem auto;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .print-page:last-child {
+            margin-bottom: 0;
+            page-break-after: auto;
+            break-after: auto;
+        }
+
+        .result-sheet {
+            background: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid #667eea;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* School Header */
+        .school-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 22px 28px;
+            text-align: center;
+        }
+
+        .school-header h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        .school-header .address {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .exam-title {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 22px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Student Info */
+        .student-info {
+            display: flex;
+            padding: 20px 28px;
+            gap: 20px;
+            border-bottom: 2px solid #e8ecf1;
+            align-items: center;
+        }
+
+        .student-photo {
+            width: 90px;
+            height: 110px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            overflow: hidden;
+            background: #f1f3f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .student-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            font-size: 2.2rem;
+            color: #667eea;
+        }
+
+        .student-details {
+            flex: 1;
+        }
+
+        .student-details h2 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .student-id-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 18px;
+        }
+
+        .detail-item {
+            font-size: 0.82rem;
+        }
+
+        .detail-item .label {
+            font-weight: 600;
+            color: #888;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-item .value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* Marks Table */
+        .marks-section {
+            padding: 20px 28px;
+        }
+
+        .marks-section h3 {
+            font-size: 1rem;
+            color: #667eea;
+            margin-bottom: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .marks-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #d0d5dd;
+        }
+
+        .marks-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 9px 12px;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .marks-table tbody td {
+            padding: 8px 12px;
+            text-align: center;
+            border: 1px solid #e0e3e8;
+            font-size: 0.88rem;
+        }
+
+        .marks-table tbody tr:nth-child(even) {
+            background: #f8f9fc;
+        }
+
+        .marks-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .marks-table tfoot td {
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid #d0d5dd;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+            color: #333;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: white;
+        }
+
+        .grade-a-plus { background: #10b981; }
+        .grade-a { background: #3b82f6; }
+        .grade-b-plus { background: #8b5cf6; }
+        .grade-b { background: #f59e0b; }
+        .grade-c { background: #ef4444; }
+        .grade-d { background: #991b1b; }
+        .grade-f { background: #450a0a; }
+
+        /* Summary Section */
+        .summary-section {
+            display: flex;
+            border-top: 2px solid #667eea;
+        }
+
+        .summary-box {
+            flex: 1;
+            text-align: center;
+            padding: 14px 10px;
+            border-right: 1px solid #e0e3e8;
+        }
+
+        .summary-box:last-child {
+            border-right: none;
+        }
+
+        .summary-box .sum-label {
+            font-size: 0.68rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .summary-box .sum-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #333;
+        }
+
+        .summary-box.status-pass .sum-value { color: #10b981; }
+        .summary-box.status-fail .sum-value { color: #ef4444; }
+
+        /* Signatures */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            padding: 18px 35px 12px;
+        }
+
+        .signature-block {
+            text-align: center;
+            width: 28%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .signature-img-box {
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+            width: 100%;
+        }
+
+        .sig-img {
+            max-height: 38px;
+            max-width: 130px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        .signature-line {
+            width: 100%;
+            border-bottom: 1.5px solid #333;
+            margin-bottom: 3px;
+        }
+
+        .signature-label {
+            font-size: 0.72rem;
+            color: #333;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .signature-name {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 1px;
+        }
+
+        .result-footer {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fc;
+            border-top: 1px solid #e0e3e8;
+            font-size: 0.68rem;
+            color: #888;
+        }
+
+        /* Adaptive Compact Styles */
+        .results-compact .school-header { padding: 16px 22px; }
+        .results-compact .school-header h1 { font-size: 1.45rem; margin-bottom: 2px; }
+        .results-compact .student-info { padding: 14px 22px; gap: 16px; }
+        .results-compact .student-photo { width: 85px; height: 100px; }
+        .results-compact .marks-section { padding: 12px 22px; }
+        .results-compact .marks-section h3 { margin-bottom: 8px; font-size: 0.95rem; }
+        .results-compact .marks-table thead th,
+        .results-compact .marks-table tbody td,
+        .results-compact .marks-table tfoot td { padding: 6px 10px; font-size: 0.85rem; }
+        .results-compact .summary-box { padding: 10px 10px; }
+        .results-compact .summary-box .sum-value { font-size: 1.1rem; }
+        .results-compact .signature-section { padding: 14px 30px 10px; }
+        .results-compact .signature-img-box { height: 36px; }
+        .results-compact .sig-img { max-height: 34px; }
+
+        /* Tight Mode (> 10 subjects) */
+        .results-tight .school-header { padding: 12px 18px; }
+        .results-tight .school-header h1 { font-size: 1.35rem; margin-bottom: 2px; }
+        .results-tight .school-header .address { font-size: 0.75rem; margin-bottom: 3px; }
+        .results-tight .exam-title { padding: 3px 16px; font-size: 0.82rem; }
+        .results-tight .student-info { padding: 10px 18px; gap: 14px; }
+        .results-tight .student-photo { width: 80px; height: 95px; }
+        .results-tight .student-details h2 { font-size: 1.2rem; margin-bottom: 2px; }
+        .results-tight .student-id-badge { font-size: 0.72rem; padding: 2px 10px; margin-bottom: 4px; }
+        .results-tight .detail-item { font-size: 0.8rem; }
+        .results-tight .marks-section { padding: 10px 18px; }
+        .results-tight .marks-section h3 { margin-bottom: 5px; font-size: 0.9rem; }
+        .results-tight .marks-table thead th,
+        .results-tight .marks-table tbody td,
+        .results-tight .marks-table tfoot td { padding: 4.5px 8px; font-size: 0.82rem; }
+        .results-tight .grade-badge { padding: 2px 8px; font-size: 0.75rem; }
+        .results-tight .summary-box { padding: 8px 8px; }
+        .results-tight .summary-box .sum-label { font-size: 0.65rem; margin-bottom: 2px; }
+        .results-tight .summary-box .sum-value { font-size: 1.05rem; }
+        .results-tight .signature-section { padding: 10px 25px 6px; }
+        .results-tight .signature-img-box { height: 32px; }
+        .results-tight .sig-img { max-height: 30px; }
+        .results-tight .signature-label { font-size: 0.7rem; }
+        .results-tight .result-footer { padding: 6px; font-size: 0.65rem; }
+
+        /* Print Media Styles */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .controls {
+                display: none !important;
+            }
+
+            .print-page {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                height: 280mm !important;
+                min-height: 280mm !important;
+                max-height: 280mm !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            .print-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+
+            .result-sheet {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                height: 100% !important;
+                border: 2px solid #667eea !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+
+            .school-header,
+            .marks-table thead th,
+            .grade-badge,
+            .marks-table tfoot td,
+            .summary-section {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            table, tr, td, th, .signature-section, .summary-section {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="controls-info">
+            📊 Class: <strong>{{ school_class }}</strong> | Exam: <strong>{{ exam_name }}</strong> ({{ total_students_count }} Verified Results)
+        </div>
+        <div class="controls-actions">
+            <a href="{% url 'result_download' %}" class="btn btn-back">← Back</a>
+            <button class="btn btn-print" onclick="window.print()">🖨️ Print All Results</button>
+            <button class="btn btn-download" onclick="window.print()">📥 Save as 1 PDF</button>
+        </div>
+    </div>
+
+    {% for item in student_results %}
+    <div class="print-page">
+        <div class="result-sheet {% if item.results|length > 10 %}results-tight{% elif item.results|length > 7 %}results-compact{% else %}results-normal{% endif %}">
+            <!-- School Header -->
+            <div class="school-header">
+                <h1>
+                    {% if school_info.logo %}
+                        <img src="{% url 'serve_binary' 'SchoolInfo' school_info.id 'logo' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px; border-radius: 50%; background: white; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px; border-radius: 50%; background: white; object-fit: cover;">
+                    {% endif %}
+                    Mid Point School
+                </h1>
+                <div class="address">Barahiya, Near Hanuman Temple</div>
+                <div class="exam-title">📋 {{ exam_name }}</div>
+            </div>
+
+            <!-- Student Info -->
+            <div class="student-info">
+                <div class="student-photo">
+                    {% if item.student.photo_url or item.student.photo %}
+                    <img src="{% if item.student.photo_url %}{{ item.student.photo_url }}{% else %}{% url 'serve_binary' 'Student' item.student.id 'photo' %}{% endif %}" alt="{{ item.student.name }}">
+                    {% else %}
+                    <div class="photo-placeholder">👤</div>
+                    {% endif %}
+                </div>
+
+                <div class="student-details">
+                    <div class="student-id-badge">Roll No: MPS-{{ item.student.pk|stringformat:"04d" }}</div>
+                    <h2>{{ item.student.name }}</h2>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="label">Father's Name:</span>
+                            <span class="value">{{ item.student.father_name }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Class:</span>
+                            <span class="value">{{ item.student.student_class|default:"N/A" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Mobile:</span>
+                            <span class="value">{{ item.student.mobile }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Address:</span>
+                            <span class="value">{{ item.student.address|default:"N/A"|truncatewords:6 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marks Table -->
+            <div class="marks-section">
+                <h3>📊 Subject-wise Marks</h3>
+                <table class="marks-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 6%;">#</th>
+                            <th style="width: 36%;">Subject</th>
+                            <th>Marks Obtained</th>
+                            <th>Total Marks</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in item.results %}
+                        <tr>
+                            <td style="text-align: center;">{{ forloop.counter }}</td>
+                            <td>{{ result.subject.subject_name }}</td>
+                            <td>{{ result.marks_obtained }}</td>
+                            <td>{{ result.total_marks }}</td>
+                            <td><strong>{{ result.percentage|floatformat:1 }}%</strong></td>
+                            <td>
+                                <span class="grade-badge grade-{{ result.grade|lower|cut:'+' }}">
+                                    {{ result.grade }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="text-align: right;">TOTAL</td>
+                            <td>{{ item.total_marks_obtained|floatformat:0 }}</td>
+                            <td>{{ item.total_marks_total|floatformat:0 }}</td>
+                            <td><strong>{{ item.overall_percentage|floatformat:2 }}%</strong></td>
+                            <td>
+                                <span class="grade-badge grade-{{ item.overall_grade|lower|cut:'+' }}">
+                                    {{ item.overall_grade }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-section">
+                <div class="summary-box">
+                    <div class="sum-label">Total Subjects</div>
+                    <div class="sum-value">{{ item.total_subjects }}</div>
+                </div>
+                <div class="summary-box">
+                    <div class="sum-label">Marks Obtained</div>
+                    <div class="sum-value">{{ item.total_marks_obtained|floatformat:0 }} / {{ item.total_marks_total|floatformat:0 }}</div>
+                </div>
+                <div class="summary-box">
+                    <div class="sum-label">Overall %</div>
+                    <div class="sum-value">{{ item.overall_percentage|floatformat:2 }}%</div>
+                </div>
+                <div class="summary-box">
+                    <div class="sum-label">Overall Grade</div>
+                    <div class="sum-value">{{ item.overall_grade }}</div>
+                </div>
+                <div class="summary-box status-{% if item.result_status == 'PASS' %}pass{% else %}fail{% endif %}">
+                    <div class="sum-label">Result</div>
+                    <div class="sum-value">{{ item.result_status }}</div>
+                </div>
+            </div>
+
+            <!-- Signatures -->
+            <div class="signature-section">
+                <div class="signature-block">
+                    <div class="signature-img-box">
+                        {% if item.class_teacher and item.class_teacher.signature_url or item.class_teacher and item.class_teacher.signature %}
+                            <img src="{% if item.class_teacher.signature_url %}{{ item.class_teacher.signature_url }}{% else %}{% url 'serve_binary' 'Teacher' item.class_teacher.id 'signature' %}{% endif %}" alt="Class Teacher Signature" class="sig-img">
+                        {% endif %}
+                    </div>
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Class Teacher</div>
+                    {% if item.class_teacher %}<div class="signature-name">{{ item.class_teacher.name }}</div>{% endif %}
+                </div>
+                <div class="signature-block">
+                    <div class="signature-img-box"></div>
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Exam Controller</div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-img-box">
+                        {% if school_info and school_info.principal_signature_url or school_info and school_info.principal_signature %}
+                            <img src="{% if school_info.principal_signature_url %}{{ school_info.principal_signature_url }}{% else %}{% url 'serve_binary' 'SchoolInfo' school_info.id 'principal_signature' %}{% endif %}" alt="Principal Signature" class="sig-img">
+                        {% endif %}
+                    </div>
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Principal</div>
+                    {% if school_info and school_info.principal_name %}<div class="signature-name">{{ school_info.principal_name }}</div>{% endif %}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="result-footer">
+                This is a computer-generated result sheet from Mid Point School, Barahiya (Near Hanuman Temple). No signature required for digital copy.
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>
