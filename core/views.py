@@ -1752,7 +1752,7 @@ def result_verify_student_all(request):
         remarks = request.POST.get('remarks', '')
         
         admin_id = request.session.get('admin_id')
-        admin = get_object_or_404(Admin, pk=admin_id)
+        admin = Admin.objects.filter(pk=admin_id).first()  # safe lookup — None if not found
         student = get_object_or_404(Student, pk=student_id)
 
         target_status = 'Verified' if action == 'approve' else 'Rejected'
@@ -1788,7 +1788,7 @@ def result_verify_bulk(request):
         action = request.POST.get('action', 'approve')
         
         admin_id = request.session.get('admin_id')
-        admin = get_object_or_404(Admin, pk=admin_id)
+        admin = Admin.objects.filter(pk=admin_id).first()  # safe lookup — None if not found
         
         queryset = Result.objects.all()
         if class_id:
@@ -1831,7 +1831,7 @@ def admin_student_results_manage(request, student_id):
     if request.method == 'POST':
         action = request.POST.get('form_action')
         admin_id = request.session.get('admin_id')
-        admin = get_object_or_404(Admin, pk=admin_id)
+        admin = Admin.objects.filter(pk=admin_id).first()  # safe lookup — None if not found
 
         if action == 'update_marks':
             # Batch update marks and status for all results on page
@@ -1923,9 +1923,8 @@ def result_approve(request, pk):
         return redirect('admin_login')
     
     admin_id = request.session.get('admin_id')
-    admin = get_object_or_404(Admin, pk=admin_id)
+    admin = Admin.objects.filter(pk=admin_id).first()  # safe lookup — None if not found
     result = get_object_or_404(Result, pk=pk)
-    
     result.verification_status = 'Verified'
     result.verified_by = admin
     result.verification_date = timezone.now()
@@ -1943,9 +1942,8 @@ def result_reject(request, pk):
         return redirect('admin_login')
     
     admin_id = request.session.get('admin_id')
-    admin = get_object_or_404(Admin, pk=admin_id)
+    admin = Admin.objects.filter(pk=admin_id).first()  # safe lookup — None if not found
     result = get_object_or_404(Result, pk=pk)
-    
     result.verification_status = 'Rejected'
     result.verified_by = admin
     result.verification_date = timezone.now()
