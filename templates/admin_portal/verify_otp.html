@@ -1,294 +1,783 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Verify OTP — Admin 2FA | Mid Point School{% endblock %}
+{% block title %}Security Verification — Admin 2FA | Mid Point School{% endblock %}
 
 {% block extra_css %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
-    background: #0a0f1e;
-    display: flex; align-items: center; justify-content: center;
-    position: relative; overflow: hidden;
+    background: #070a14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
   }
 
-  body::before {
-    content: '';
+  /* Cybernetic Background Glows */
+  .cyber-bg {
     position: fixed;
-    width: 700px; height: 700px;
-    background: radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 65%);
-    top: -250px; right: -250px;
-    animation: drift 20s ease-in-out infinite alternate;
+    inset: 0;
     pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
   }
-  body::after {
-    content: '';
-    position: fixed;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 65%);
-    bottom: -200px; left: -200px;
-    animation: drift 25s ease-in-out infinite alternate-reverse;
-    pointer-events: none;
+  .cyber-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 85%);
   }
-  @keyframes drift {
-    from { transform: translate(0,0); }
-    to   { transform: translate(50px,-50px); }
+  .cyber-orb-1 {
+    position: absolute;
+    width: 650px;
+    height: 650px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.22) 0%, transparent 70%);
+    top: -200px;
+    right: -150px;
+    animation: orbFloat1 20s ease-in-out infinite alternate;
+  }
+  .cyber-orb-2 {
+    position: absolute;
+    width: 550px;
+    height: 550px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+    bottom: -150px;
+    left: -150px;
+    animation: orbFloat2 24s ease-in-out infinite alternate;
+  }
+  @keyframes orbFloat1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-60px, 80px) scale(1.15); }
+  }
+  @keyframes orbFloat2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(80px, -60px) scale(1.12); }
   }
 
-  .otp-wrap {
-    position: relative; z-index: 10;
-    width: 100%; max-width: 480px;
+  /* Container */
+  .verify-wrap {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 500px;
     padding: 1.5rem;
   }
 
-  .otp-card {
-    background: rgba(15,23,42,0.85);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 24px;
-    padding: 2.75rem 2.5rem;
-    box-shadow: 0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
-    text-align: center;
-  }
-
-  .shield-icon {
-    width: 72px; height: 72px;
-    background: linear-gradient(135deg, #7c3aed, #2563eb);
-    border-radius: 22px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.2rem;
-    margin: 0 auto 1.2rem;
-    box-shadow: 0 10px 28px rgba(124,58,237,0.45);
+  .verify-card {
     position: relative;
-  }
-  .shield-icon::after {
-    content: '';
-    position: absolute; inset: -4px;
-    border-radius: 26px;
-    background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(37,99,235,0.3));
-    z-index: -1;
-    animation: pulse-ring 2.5s ease-out infinite;
-  }
-  @keyframes pulse-ring {
-    0%   { transform: scale(1); opacity: 0.7; }
-    100% { transform: scale(1.25); opacity: 0; }
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    padding: 2.75rem 2.25rem 2.25rem;
+    box-shadow: 
+      0 30px 70px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(124, 58, 237, 0.18) inset;
+    text-align: center;
+    overflow: hidden;
   }
 
-  .step-label {
-    display: inline-block;
-    background: rgba(124,58,237,0.15);
-    border: 1px solid rgba(124,58,237,0.3);
-    color: #a78bfa;
+  /* Top Glowing Border Line */
+  .verify-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #818cf8, #c084fc, transparent);
+  }
+
+  /* Futuristic Animated Cyber HUD Security Orb */
+  .futuristic-security-orb {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: orbHover 4s ease-in-out infinite;
+  }
+  @keyframes orbHover {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .orb-halo {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 245, 255, 0.28) 0%, rgba(124, 58, 237, 0.22) 50%, transparent 75%);
+    filter: blur(14px);
+    pointer-events: none;
+    animation: haloPulse 3s ease-in-out infinite alternate;
+  }
+  @keyframes haloPulse {
+    0% { opacity: 0.5; transform: scale(0.92); }
+    100% { opacity: 0.95; transform: scale(1.12); }
+  }
+
+  .orb-hud-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .hud-outer-ring {
+    transform-origin: 50px 50px;
+    animation: rotateClockwise 14s linear infinite;
+  }
+  .hud-inner-ring {
+    transform-origin: 50px 50px;
+    animation: rotateCounter 20s linear infinite;
+  }
+  @keyframes rotateClockwise {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes rotateCounter {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  .hud-node {
+    filter: drop-shadow(0 0 4px #00f5ff);
+  }
+
+  .keyhole-pulse {
+    transform-origin: 50px 49px;
+    animation: laserFlicker 1.8s ease-in-out infinite alternate;
+  }
+  @keyframes laserFlicker {
+    0% { opacity: 0.4; transform: scale(0.7); }
+    100% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 6px #00f5ff); }
+  }
+
+  .tag-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #c084fc;
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.6px;
     text-transform: uppercase;
-    padding: 0.28rem 0.9rem;
+    padding: 0.32rem 1rem;
     border-radius: 999px;
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.85rem;
   }
 
-  .otp-card h1 {
+  .verify-card h1 {
     color: #f8fafc;
-    font-size: 1.55rem;
+    font-size: 1.65rem;
     font-weight: 800;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.3px;
+    margin-bottom: 0.45rem;
+    letter-spacing: -0.4px;
   }
-  .otp-card .hint {
-    color: #64748b;
-    font-size: 0.875rem;
-    line-height: 1.55;
-    margin-bottom: 0.4rem;
-  }
-  .chat-id-pill {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    background: rgba(30,41,59,0.8);
-    border: 1px solid rgba(255,255,255,0.08);
+
+  .verify-card .subtitle {
     color: #94a3b8;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Prominent Security ID Banner */
+  .device-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    padding: 0.45rem 1.15rem;
+    border-radius: 50px;
+    margin-bottom: 1rem;
+  }
+  .device-icon {
+    font-size: 1rem;
+  }
+  .device-text {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    padding: 0.3rem 0.75rem;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
+    font-size: 0.88rem;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+  }
+  .device-text strong {
+    color: #38bdf8;
+    font-weight: 700;
+    letter-spacing: 1.2px;
   }
 
   /* Alerts */
   .alert {
-    display: flex; align-items: flex-start; gap: 0.6rem;
-    padding: 0.8rem 1rem;
-    border-radius: 12px;
-    font-size: 0.84rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    font-size: 0.85rem;
     margin: 1rem 0;
     border: 1px solid;
-    line-height: 1.5;
+    line-height: 1.45;
     text-align: left;
+    animation: fadeIn 0.3s ease;
   }
-  .alert-error   { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
-  .alert-success { background: rgba(34,197,94,0.10);  border-color: rgba(34,197,94,0.3);  color: #86efac; }
-  .alert-warning { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.3); color: #fde68a; }
-  .alert-info    { background: rgba(59,130,246,0.10); border-color: rgba(59,130,246,0.3); color: #93c5fd; }
+  .alert-error   { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+  .alert-success { background: rgba(34, 197, 94, 0.12);  border-color: rgba(34, 197, 94, 0.35);  color: #86efac; }
+  .alert-warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); color: #fde68a; }
+  .alert-info    { background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; }
 
-  /* 6 split digit boxes */
+  /* 6 Digit Input Boxes */
+  .digit-container {
+    margin: 1.5rem 0 0.85rem;
+  }
   .digit-row {
-    display: flex; gap: 0.6rem;
+    display: flex;
+    gap: 0.65rem;
     justify-content: center;
-    margin: 1.6rem 0 0.6rem;
   }
   .digit-box {
-    width: 52px; height: 62px;
-    background: rgba(30,41,59,0.75);
-    border: 2px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    color: #f1f5f9;
+    width: 54px;
+    height: 64px;
+    background: rgba(30, 41, 59, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: #f8fafc;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 1.6rem;
-    font-weight: 600;
+    font-size: 1.75rem;
+    font-weight: 700;
     text-align: center;
     outline: none;
-    transition: border-color 0.18s, box-shadow 0.18s, transform 0.1s;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     caret-color: transparent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
   .digit-box:focus {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
-    transform: translateY(-2px);
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+    box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.25), 0 8px 20px rgba(99, 102, 241, 0.3);
+    transform: translateY(-4px) scale(1.04);
   }
   .digit-box.filled {
-    border-color: #2563eb;
-    background: rgba(37,99,235,0.1);
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
   }
-  /* Hidden real input bound to Django form */
-  .real-otp-input { display: none; }
+  .digit-box.pop {
+    animation: boxPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes boxPop {
+    0% { transform: scale(0.9); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.04); }
+  }
 
-  /* Timer */
-  .timer-bar {
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    margin: 0.75rem 0 1.5rem;
-    font-size: 0.85rem;
-    color: #475569;
+  /* Real form input hidden */
+  .real-otp-field { display: none; }
+
+  /* Timer Display */
+  .timer-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50px;
+    padding: 0.4rem 1.1rem;
+    margin: 1.1rem 0 1.5rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
   }
-  .timer-count {
+  .timer-pill {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     color: #fbbf24;
-    background: rgba(251,191,36,0.1);
-    border: 1px solid rgba(251,191,36,0.2);
-    padding: 0.18rem 0.6rem;
-    border-radius: 8px;
-    min-width: 56px;
-    text-align: center;
-    transition: color 0.3s, background 0.3s;
+    transition: color 0.3s;
   }
-  .timer-count.expired {
+  .timer-pill.expired {
     color: #ef4444;
-    background: rgba(239,68,68,0.1);
-    border-color: rgba(239,68,68,0.3);
   }
 
-  /* Verify button */
-  .btn-verify {
+  /* Submit Button */
+  .btn-submit-verify {
     width: 100%;
-    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-    border: none; border-radius: 13px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
+    background-size: 200% 200%;
+    border: none;
+    border-radius: 14px;
     color: #fff;
-    font-size: 1rem; font-weight: 700;
-    padding: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.95rem;
     cursor: pointer;
-    transition: transform 0.18s, box-shadow 0.18s;
-    box-shadow: 0 8px 24px rgba(124,58,237,0.4);
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 26px rgba(124, 58, 237, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    letter-spacing: 0.3px;
   }
-  .btn-verify:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,58,237,0.55); }
-  .btn-verify:active { transform: translateY(0); }
+  .btn-submit-verify:hover {
+    background-position: 100% 0%;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.6);
+  }
+  .btn-submit-verify:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
 
-  /* Footer */
+  /* Footer Controls */
   .footer-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 1.4rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.6rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .resend-form { display: inline; }
-  .btn-resend {
-    background: none; border: none;
-    color: #7c3aed;
-    font-size: 0.85rem; font-weight: 600;
+  .resend-btn {
+    background: none;
+    border: none;
+    color: #a78bfa;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
-    display: flex; align-items: center; gap: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     transition: color 0.2s;
   }
-  .btn-resend:hover { color: #a78bfa; text-decoration: underline; }
+  .resend-btn:hover {
+    color: #c4b5fd;
+    text-decoration: underline;
+  }
   .back-link {
-    color: #334155;
-    font-size: 0.82rem;
+    color: #64748b;
+    font-size: 0.84rem;
     text-decoration: none;
     transition: color 0.2s;
   }
-  .back-link:hover { color: #64748b; }
+  .back-link:hover {
+    color: #94a3b8;
+  }
+
+  /* ════════════════════════════════════════════════════════════ */
+  /*       INTERACTIVE OVERLAY: ACCESS GRANTED / ACCESS DENIED    */
+  /* ════════════════════════════════════════════════════════════ */
+  .status-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 15, 30, 0.96);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 28px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 2rem;
+  }
+  .status-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+
+  /* Scanner Line */
+  .status-scanner-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    animation: scanAnim 1.8s ease-in-out infinite alternate;
+  }
+  .state-granted .status-scanner-line {
+    background: linear-gradient(90deg, transparent, #10b981, #6ee7b7, transparent);
+    box-shadow: 0 0 15px #10b981;
+  }
+  .state-denied .status-scanner-line {
+    background: linear-gradient(90deg, transparent, #ef4444, #f87171, transparent);
+    box-shadow: 0 0 15px #ef4444;
+  }
+  @keyframes scanAnim {
+    0% { top: 8%; opacity: 0.3; }
+    100% { top: 92%; opacity: 0.9; }
+  }
+
+  /* Central Circle & Icon */
+  .status-icon-wrap {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    margin-bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .status-sonar-ring {
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    animation: sonarWave 1.6s ease-out infinite;
+  }
+  .state-granted .status-sonar-ring {
+    border: 2px solid rgba(16, 185, 129, 0.5);
+  }
+  .state-denied .status-sonar-ring {
+    border: 2px solid rgba(239, 68, 68, 0.5);
+  }
+  @keyframes sonarWave {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+
+  .status-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: circlePulse 1.8s ease-in-out infinite alternate;
+  }
+  .state-granted .status-circle {
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.1) 70%);
+    border: 2.5px solid #10b981;
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.55), 0 0 15px rgba(16, 185, 129, 0.3) inset;
+  }
+  .state-denied .status-circle {
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.1) 70%);
+    border: 2.5px solid #ef4444;
+    box-shadow: 0 0 35px rgba(239, 68, 68, 0.55), 0 0 15px rgba(239, 68, 68, 0.3) inset;
+  }
+  @keyframes circlePulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+  }
+
+  /* SVG Icons: Tick & Cross */
+  .status-svg {
+    width: 58px;
+    height: 58px;
+  }
+  /* Tick Checkmark path */
+  .checkmark-path {
+    stroke: #10b981;
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    fill: none;
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.9));
+  }
+  .state-granted .checkmark-path {
+    animation: drawCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.1s;
+  }
+  @keyframes drawCheck {
+    0% { stroke-dashoffset: 60; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* Cross (X) paths */
+  .cross-path-1, .cross-path-2 {
+    stroke: #ef4444;
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 45;
+    stroke-dashoffset: 45;
+    fill: none;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9));
+  }
+  .state-denied .cross-path-1 {
+    animation: drawCross 0.35s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.05s;
+  }
+  .state-denied .cross-path-2 {
+    animation: drawCross 0.35s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.25s;
+  }
+  @keyframes drawCross {
+    0% { stroke-dashoffset: 45; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* Status Badge */
+  .status-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 0.3rem 0.95rem;
+    border-radius: 999px;
+    margin-bottom: 0.65rem;
+  }
+  .state-granted .status-badge {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #6ee7b7;
+  }
+  .state-denied .status-badge {
+    background: rgba(239, 68, 68, 0.18);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: #fca5a5;
+  }
+
+  /* Status Title */
+  .status-title {
+    font-size: 1.85rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .state-granted .status-title {
+    color: #10b981;
+    text-shadow: 0 0 25px rgba(16, 185, 129, 0.65);
+    animation: textGlowGreen 1.5s ease-in-out infinite alternate;
+  }
+  .state-denied .status-title {
+    color: #ef4444;
+    text-shadow: 0 0 25px rgba(239, 68, 68, 0.65);
+    animation: textGlowRed 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes textGlowGreen {
+    from { opacity: 0.9; }
+    to { opacity: 1; text-shadow: 0 0 35px rgba(16, 185, 129, 0.9); }
+  }
+  @keyframes textGlowRed {
+    from { opacity: 0.9; }
+    to { opacity: 1; text-shadow: 0 0 35px rgba(239, 68, 68, 0.9); }
+  }
+
+  .status-desc {
+    color: #94a3b8;
+    font-size: 0.88rem;
+    max-width: 320px;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Try Again Button (Shown only on Access Denied) */
+  .btn-try-again {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.75rem 1.8rem;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-try-again:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(239, 68, 68, 0.6);
+  }
+
+  /* Shake Animation */
+  .shake-card {
+    animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-3px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+  }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="otp-wrap">
-  <div class="otp-card">
+<!-- Cybernetic ambient background -->
+<div class="cyber-bg">
+  <div class="cyber-grid"></div>
+  <div class="cyber-orb-1"></div>
+  <div class="cyber-orb-2"></div>
+</div>
 
-    <div class="shield-icon">🔐</div>
-    <span class="step-label">Two-Factor Authentication</span>
-    <h1>Verify Security Code</h1>
-    <p class="hint">A 6-digit code was sent to your Telegram account.</p>
-    {% if masked_chat_id %}
-    <div class="chat-id-pill">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="#60a5fa"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
-      Chat ID: {{ masked_chat_id }}
+<div class="verify-wrap">
+  <div class="verify-card" id="verifyCard">
+
+    <!-- ═══ INTERACTIVE STATUS OVERLAY (ACCESS GRANTED / ACCESS DENIED) ═══ -->
+    <div class="status-overlay" id="statusOverlay">
+      <div class="status-scanner-line"></div>
+      
+      <div class="status-icon-wrap">
+        <div class="status-sonar-ring"></div>
+        <div class="status-circle">
+          <!-- Animated Checkmark (Granted) -->
+          <svg class="status-svg" id="svgGranted" viewBox="0 0 52 52" style="display:none;">
+            <path class="checkmark-path" d="M14 27 l10 10 l20 -22" />
+          </svg>
+
+          <!-- Animated Cross (Denied) -->
+          <svg class="status-svg" id="svgDenied" viewBox="0 0 52 52" style="display:none;">
+            <line class="cross-path-1" x1="16" y1="16" x2="36" y2="36" />
+            <line class="cross-path-2" x1="36" y1="16" x2="16" y2="36" />
+          </svg>
+        </div>
+      </div>
+
+      <span class="status-badge" id="statusBadge">SESSION VERIFIED</span>
+      <h2 class="status-title" id="statusTitle">ACCESS GRANTED</h2>
+      <p class="status-desc" id="statusDesc">Identity authenticated. Unlocking Administrator Portal...</p>
+
+      <!-- Try Again Button (Visible on Denied) -->
+      <button type="button" class="btn-try-again" id="btnTryAgain" style="display:none;" onclick="handleTryAgain()">
+        <span>↺</span>
+        <span>Try Again</span>
+      </button>
     </div>
-    {% endif %}
+
+    <!-- Futuristic Cyber Security HUD Orb -->
+    <div class="futuristic-security-orb">
+      <div class="orb-halo"></div>
+      <svg class="orb-hud-svg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="cyberGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00f5ff" />
+            <stop offset="50%" stop-color="#818cf8" />
+            <stop offset="100%" stop-color="#d946ef" />
+          </linearGradient>
+          <linearGradient id="cyberPlate" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="rgba(30, 41, 59, 0.95)" />
+            <stop offset="100%" stop-color="rgba(15, 23, 42, 0.95)" />
+          </linearGradient>
+          <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#6366f1" />
+          </linearGradient>
+          <filter id="neonGlowOrb" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Outer Rotating HUD Orbit -->
+        <circle class="hud-outer-ring" cx="50" cy="50" r="44" stroke="url(#cyberGrad1)" stroke-width="1.8" fill="none" stroke-dasharray="16 8 28 8" />
+        <circle class="hud-inner-ring" cx="50" cy="50" r="38" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.2" fill="none" stroke-dasharray="6 6" />
+
+        <!-- 4 Orbit Tracker Nodes -->
+        <circle class="hud-node" cx="50" cy="6" r="2.5" fill="#00f5ff" />
+        <circle class="hud-node" cx="94" cy="50" r="2.2" fill="#d946ef" />
+        <circle class="hud-node" cx="50" cy="94" r="2.5" fill="#00f5ff" />
+        <circle class="hud-node" cx="6" cy="50" r="2.2" fill="#d946ef" />
+
+        <!-- Hexagonal Cyber Shield Matrix Core -->
+        <polygon points="50,22 73,34 73,66 50,78 27,66 27,34" fill="url(#cyberPlate)" stroke="url(#cyberGrad1)" stroke-width="2" filter="url(#neonGlowOrb)" />
+
+        <!-- Tech Circuit Accents inside hexagon -->
+        <path d="M36 39 L42 45 M64 39 L58 45" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.5" stroke-linecap="round" />
+
+        <!-- Tech lock shackle -->
+        <path d="M43 43 V36 A7 7 0 0 1 57 36 V43" fill="none" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round" />
+        <!-- Lock body with glowing cyber core -->
+        <rect x="38" y="43" width="24" height="19" rx="4" fill="url(#coreGrad)" />
+        <!-- Quantum Keyhole with glowing laser dot -->
+        <circle cx="50" cy="49" r="2.4" fill="#070a14" />
+        <path d="M50 51.2 V56" stroke="#070a14" stroke-width="2.2" stroke-linecap="round" />
+        <circle class="keyhole-pulse" cx="50" cy="49" r="1.2" fill="#00f5ff" />
+      </svg>
+    </div>
+    <span class="tag-label">Security Verification</span>
+    <h1>Two-Step Authentication</h1>
+    <p class="subtitle">Enter the 6-digit verification code sent to your registered security device.</p>
+
+    <!-- Prominent Security ID Pill (Requested by User) -->
+    <div class="device-pill">
+      <span class="device-icon">🔑</span>
+      <span class="device-text">Security ID: <strong>{{ masked_chat_id|default:"*******666" }}</strong></span>
+    </div>
 
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
           {% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✅{% elif message.tags == 'info' %}ℹ️{% else %}🔔{% endif %}
           {{ message }}
         </div>
       {% endfor %}
     {% endif %}
 
+    <!-- OTP Form -->
     <form method="post" action="{% url 'admin_verify_otp' %}" id="otpForm">
       {% csrf_token %}
-      {# Hidden real input tied to Django form field #}
-      <div class="real-otp-input">{{ form.otp_code }}</div>
 
-      {# 6 visual digit boxes #}
-      <div class="digit-row" id="digitRow">
-        {% for i in "123456" %}
-        <input type="text" class="digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-        {% endfor %}
+      {# Hidden input bound to Django's form field #}
+      <div class="real-otp-field">
+        {{ form.otp_code }}
+      </div>
+
+      <!-- 6 Visual Digit Input Cards -->
+      <div class="digit-container">
+        <div class="digit-row" id="digitRow">
+          {% for i in "123456" %}
+          <input 
+            type="text" 
+            class="digit-box" 
+            maxlength="1" 
+            inputmode="numeric" 
+            pattern="[0-9]" 
+            autocomplete="off"
+            aria-label="Digit {{ forloop.counter }}"
+            data-index="{{ forloop.counter0 }}">
+          {% endfor %}
+        </div>
       </div>
 
       {% if form.otp_code.errors %}
-        <p style="color:#fca5a5;font-size:0.82rem;margin:0.3rem 0 0.8rem;">⚠️ {{ form.otp_code.errors.0 }}</p>
+        <p style="color:#fca5a5;font-size:0.83rem;margin:0.4rem 0 0.8rem;font-weight:600;">⚠️ {{ form.otp_code.errors.0 }}</p>
       {% endif %}
 
-      <div class="timer-bar">
-        <span>Code expires in:</span>
-        <span class="timer-count" id="countdown">05:00</span>
+      <!-- Animated Countdown Timer -->
+      <div class="timer-wrap">
+        <span>⏱ Valid for:</span>
+        <span class="timer-pill" id="countdownTimer">05:00</span>
       </div>
 
-      <button type="submit" class="btn-verify">
-        ✓ &nbsp;Verify &amp; Sign In
+      <!-- Verify Button -->
+      <button type="submit" class="btn-submit-verify" id="btnSubmitVerify">
+        <span>Verify &amp; Enter Portal</span>
+        <span>→</span>
       </button>
     </form>
 
+    <!-- Resend & Back Navigation -->
     <div class="footer-row">
-      <form method="post" action="{% url 'admin_resend_otp' %}" class="resend-form">
+      <form method="post" action="{% url 'admin_resend_otp' %}" style="margin:0;">
         {% csrf_token %}
-        <button type="submit" class="btn-resend">
-          ↺ Resend OTP
+        <button type="submit" class="resend-btn" id="btnResend">
+          <span>↺</span>
+          <span>Resend Code</span>
         </button>
       </form>
       <a href="{% url 'admin_login' %}" class="back-link">← Back to Login</a>
@@ -301,73 +790,231 @@
 {% block extra_js %}
 <script>
 (function () {
-  // ─── Digit boxes → hidden input sync ──────────────────────────────────────
-  const boxes     = document.querySelectorAll('.digit-box');
+  const boxes = document.querySelectorAll('.digit-box');
   const realInput = document.querySelector('input[name="otp_code"]');
-  const form      = document.getElementById('otpForm');
+  const form = document.getElementById('otpForm');
+  const overlay = document.getElementById('statusOverlay');
+  const card = document.getElementById('verifyCard');
+  const svgGranted = document.getElementById('svgGranted');
+  const svgDenied = document.getElementById('svgDenied');
+  const statusBadge = document.getElementById('statusBadge');
+  const statusTitle = document.getElementById('statusTitle');
+  const statusDesc = document.getElementById('statusDesc');
+  const btnTryAgain = document.getElementById('btnTryAgain');
+  const btnSubmit = document.getElementById('btnSubmitVerify');
 
-  function syncToReal() {
+  let isVerifying = false;
+
+  // Auto focus first box
+  if (boxes.length) boxes[0].focus();
+
+  {% if access_denied %}
+    // If backend rendered an access denied error initially
+    showAccessDenied("Incorrect security code entered. Please try again.");
+  {% endif %}
+
+  function getCombinedValue() {
     let val = '';
     boxes.forEach(b => val += b.value);
-    if (realInput) realInput.value = val;
+    return val;
   }
 
+  function syncToReal() {
+    const val = getCombinedValue();
+    if (realInput) realInput.value = val;
+    return val;
+  }
+
+  // ── Show ACCESS GRANTED State ──
+  function showAccessGranted(redirectUrl) {
+    overlay.className = 'status-overlay active state-granted';
+    svgGranted.style.display = 'block';
+    svgDenied.style.display = 'none';
+    statusBadge.textContent = 'SESSION VERIFIED';
+    statusTitle.textContent = 'ACCESS GRANTED';
+    statusDesc.textContent = 'Identity authenticated. Unlocking Administrator Portal...';
+    btnTryAgain.style.display = 'none';
+
+    setTimeout(() => {
+      window.location.href = redirectUrl || "{% url 'admin_dashboard' %}";
+    }, 1200);
+  }
+
+  // ── Show ACCESS DENIED State ──
+  function showAccessDenied(message) {
+    isVerifying = false;
+    overlay.className = 'status-overlay active state-denied';
+    svgGranted.style.display = 'none';
+    svgDenied.style.display = 'block';
+    statusBadge.textContent = 'AUTHENTICATION FAILED';
+    statusTitle.textContent = 'ACCESS DENIED';
+    statusDesc.textContent = message || 'Incorrect OTP code entered. Please try again.';
+    btnTryAgain.style.display = 'inline-flex';
+
+    if (btnSubmit) btnSubmit.disabled = false;
+  }
+
+  // ── Handle "Try Again" Click ──
+  window.handleTryAgain = function () {
+    overlay.classList.remove('active');
+    overlay.className = 'status-overlay';
+    svgGranted.style.display = 'none';
+    svgDenied.style.display = 'none';
+    btnTryAgain.style.display = 'none';
+
+    // Clear digit boxes
+    boxes.forEach(box => {
+      box.value = '';
+      box.classList.remove('filled', 'pop');
+    });
+    syncToReal();
+
+    // Shake digit container gently
+    card.classList.add('shake-card');
+    setTimeout(() => card.classList.remove('shake-card'), 500);
+
+    // Focus 1st box
+    if (boxes.length) boxes[0].focus();
+  };
+
+  // ── Verify via AJAX fetch ──
+  async function performVerification() {
+    const val = syncToReal();
+    if (val.length !== 6 || isVerifying) return;
+
+    isVerifying = true;
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    try {
+      const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', csrfToken);
+      formData.append('otp_code', val);
+      formData.append('is_ajax', '1');
+
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showAccessGranted(data.redirect_url);
+      } else {
+        showAccessDenied(data.message || 'Incorrect OTP code entered. Please try again.');
+      }
+    } catch (err) {
+      // In case of network error, fallback to standard form submit
+      form.submit();
+    }
+  }
+
+  // Digit box inputs
   boxes.forEach((box, idx) => {
     box.addEventListener('input', e => {
-      box.value = box.value.replace(/[^0-9]/g, '').slice(-1);
-      box.classList.toggle('filled', box.value !== '');
-      syncToReal();
-      if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+      const char = box.value.replace(/[^0-9]/g, '').slice(-1);
+      box.value = char;
+
+      if (char) {
+        box.classList.add('filled', 'pop');
+        setTimeout(() => box.classList.remove('pop'), 200);
+        const val = syncToReal();
+
+        if (idx < boxes.length - 1) {
+          boxes[idx + 1].focus();
+        } else if (val.length === 6) {
+          performVerification();
+        }
+      } else {
+        box.classList.remove('filled');
+        syncToReal();
+      }
     });
 
     box.addEventListener('keydown', e => {
-      if (e.key === 'Backspace' && !box.value && idx > 0) {
+      if (e.key === 'Backspace') {
+        if (!box.value && idx > 0) {
+          boxes[idx - 1].focus();
+          boxes[idx - 1].value = '';
+          boxes[idx - 1].classList.remove('filled');
+          syncToReal();
+        } else {
+          box.value = '';
+          box.classList.remove('filled');
+          syncToReal();
+        }
+      } else if (e.key === 'ArrowLeft' && idx > 0) {
         boxes[idx - 1].focus();
-        boxes[idx - 1].value = '';
-        boxes[idx - 1].classList.remove('filled');
-        syncToReal();
-      }
-      // Submit on Enter when all filled
-      if (e.key === 'Enter') {
-        syncToReal();
-        if (realInput && realInput.value.length === 6) form.submit();
+      } else if (e.key === 'ArrowRight' && idx < boxes.length - 1) {
+        boxes[idx + 1].focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = syncToReal();
+        if (val.length === 6) {
+          performVerification();
+        }
       }
     });
 
-    // Paste support
+    // Paste handler
     box.addEventListener('paste', e => {
       e.preventDefault();
       const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
-      pasted.split('').forEach((ch, i) => {
-        if (boxes[i]) { boxes[i].value = ch; boxes[i].classList.add('filled'); }
+      if (!pasted) return;
+
+      pasted.split('').slice(0, 6).forEach((ch, i) => {
+        if (boxes[i]) {
+          boxes[i].value = ch;
+          boxes[i].classList.add('filled');
+        }
       });
-      syncToReal();
+      const val = syncToReal();
+
       const nextFocus = Math.min(pasted.length, boxes.length - 1);
       boxes[nextFocus].focus();
+
+      if (val.length === 6) {
+        performVerification();
+      }
     });
   });
 
-  // Auto-focus first box
-  if (boxes.length) boxes[0].focus();
+  // Intercept button click
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const val = syncToReal();
+    if (val.length === 6) {
+      performVerification();
+    } else {
+      card.classList.add('shake-card');
+      setTimeout(() => card.classList.remove('shake-card'), 500);
+    }
+  });
 
-  // ─── Countdown timer ───────────────────────────────────────────────────────
-  const expiresAt  = parseInt("{{ expires_at|default:0 }}", 10);
-  const countdownEl = document.getElementById('countdown');
+  // Countdown Timer
+  const expiresAt = parseInt("{{ expires_at|default:0 }}", 10);
+  const timerEl = document.getElementById('countdownTimer');
 
-  function tick() {
-    if (!expiresAt || !countdownEl) return;
+  function updateTimer() {
+    if (!expiresAt || !timerEl) return;
     const remaining = Math.max(0, expiresAt - Math.floor(Date.now() / 1000));
     const m = Math.floor(remaining / 60).toString().padStart(2, '0');
     const s = (remaining % 60).toString().padStart(2, '0');
-    countdownEl.textContent = `${m}:${s}`;
-    if (remaining <= 30) countdownEl.classList.add('expired');
+    timerEl.textContent = `${m}:${s}`;
+
+    if (remaining <= 30) timerEl.classList.add('expired');
     if (remaining === 0) {
-      countdownEl.textContent = 'Expired';
-      return; // stop ticking
+      timerEl.textContent = 'Expired';
+      return;
     }
-    setTimeout(tick, 1000);
+    setTimeout(updateTimer, 1000);
   }
-  tick();
+  updateTimer();
 })();
 </script>
 {% endblock %}

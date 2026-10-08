@@ -43,14 +43,14 @@ class TelegramRegistrationForm(forms.Form):
     """Onboarding form for linking Telegram Chat ID to an admin account"""
     telegram_chat_id = forms.CharField(
         max_length=20,
-        label="Telegram Chat ID",
+        label="2FA Security ID",
         widget=forms.TextInput(attrs={
             'class': 'form-input',
             'placeholder': 'e.g. 123456789',
             'inputmode': 'numeric',
             'autofocus': True,
         }),
-        help_text="Send any message to @userinfobot on Telegram and it will reply with your numeric Chat ID."
+        help_text="Enter your numeric Security ID for 2FA verification."
     )
 
     def clean_telegram_chat_id(self):

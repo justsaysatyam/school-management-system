@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Link Telegram Account — Admin Setup | Mid Point School{% endblock %}
+{% block title %}2FA Security Setup — Admin | Mid Point School{% endblock %}
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -10,7 +10,7 @@
   body {
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
-    background: #0a0f1e;
+    background: #070a14;
     display: flex; align-items: center; justify-content: center;
     position: relative; overflow-x: hidden;
   }
@@ -27,7 +27,7 @@
     content: '';
     position: fixed;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(0,136,204,0.14) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
     bottom: -150px; right: -150px;
     animation: drift 24s ease-in-out infinite alternate-reverse;
     pointer-events: none;
@@ -53,16 +53,16 @@
     box-shadow: 0 32px 64px rgba(0,0,0,0.6);
   }
 
-  /* Blue Telegram header banner */
+  /* Header banner */
   .card-header {
-    background: linear-gradient(135deg, #0088cc, #1d4ed8);
+    background: linear-gradient(135deg, #4f46e5, #1d4ed8);
     padding: 2rem 2.5rem 1.75rem;
     text-align: center;
   }
-  .telegram-logo {
+  .setup-logo {
     width: 64px; height: 64px;
     background: rgba(255,255,255,0.15);
-    border-radius: 50%;
+    border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
     font-size: 2.2rem;
     margin: 0 auto 1rem;
@@ -76,7 +76,7 @@
     letter-spacing: -0.3px;
   }
   .card-header p {
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.78);
     font-size: 0.88rem;
     line-height: 1.5;
   }
@@ -96,10 +96,10 @@
     margin-bottom: 0.65rem;
     transition: border-color 0.2s;
   }
-  .step:hover { border-color: rgba(0,136,204,0.3); }
+  .step:hover { border-color: rgba(99,102,241,0.4); }
   .step-num {
     min-width: 30px; height: 30px;
-    background: linear-gradient(135deg, #0088cc, #1d4ed8);
+    background: linear-gradient(135deg, #6366f1, #2563eb);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     color: #fff;
@@ -122,9 +122,9 @@
   }
   .bot-link {
     display: inline-flex; align-items: center; gap: 0.3rem;
-    background: rgba(0,136,204,0.15);
-    border: 1px solid rgba(0,136,204,0.3);
-    color: #38bdf8;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #a5b4fc;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8rem;
     font-weight: 600;
@@ -133,9 +133,8 @@
     text-decoration: none;
     transition: background 0.2s;
     margin-top: 0.3rem;
-    display: inline-block;
   }
-  .bot-link:hover { background: rgba(0,136,204,0.25); }
+  .bot-link:hover { background: rgba(99,102,241,0.25); }
 
   /* Alerts */
   .alert {
@@ -184,8 +183,8 @@
     outline: none;
   }
   .form-input:focus {
-    border-color: #0088cc;
-    box-shadow: 0 0 0 3px rgba(0,136,204,0.2);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
   }
   .form-input::placeholder { color: #334155; letter-spacing: 0; }
   .form-help {
@@ -197,7 +196,7 @@
 
   .btn-link {
     width: 100%;
-    background: linear-gradient(135deg, #0088cc 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
     border: none; border-radius: 13px;
     color: #fff;
     font-size: 1rem; font-weight: 700;
@@ -205,19 +204,19 @@
     cursor: pointer;
     margin-top: 1.25rem;
     transition: transform 0.18s, box-shadow 0.18s;
-    box-shadow: 0 8px 24px rgba(0,136,204,0.4);
+    box-shadow: 0 8px 24px rgba(79,70,229,0.4);
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   }
-  .btn-link:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,136,204,0.55); }
+  .btn-link:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(79,70,229,0.55); }
 
   .footer-link {
     display: block; text-align: center;
     margin-top: 1.2rem;
-    color: #334155; font-size: 0.82rem;
+    color: #475569; font-size: 0.82rem;
     text-decoration: none;
     transition: color 0.2s;
   }
-  .footer-link:hover { color: #64748b; }
+  .footer-link:hover { color: #94a3b8; }
 </style>
 {% endblock %}
 
@@ -227,13 +226,9 @@
 
     <!-- Header -->
     <div class="card-header">
-      <div class="telegram-logo">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff">
-          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
-        </svg>
-      </div>
-      <h1>Link Your Telegram Account</h1>
-      <p>One-time setup to enable Telegram 2FA for secure admin login.</p>
+      <div class="setup-logo">🛡️</div>
+      <h1>Two-Factor Authentication Setup</h1>
+      <p>One-time security configuration for admin authentication.</p>
     </div>
 
     <!-- Body -->
@@ -253,26 +248,26 @@
         <div class="step">
           <div class="step-num">1</div>
           <div class="step-content">
-            <strong>Find your Telegram Chat ID</strong>
-            <span>Open Telegram and send any message to <code style="background:rgba(0,136,204,0.12);color:#38bdf8;padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;">@userinfobot</code>. It will instantly reply with your numeric Chat ID.</span>
+            <strong>Get your Security ID</strong>
+            <span>Send any message to <code style="background:rgba(99,102,241,0.15);color:#a5b4fc;padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;">@userinfobot</code> to receive your numeric ID.</span>
           </div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <div class="step-content">
-            <strong>Start the School Auth Bot</strong>
-            <span>Send /start to <strong style="color:#60a5fa;">@School_sms_auth_bot</strong> so it can message you. This is required — the bot cannot send you messages otherwise.</span>
+            <strong>Activate the Auth Bot</strong>
+            <span>Send /start to <strong style="color:#60a5fa;">@School_sms_auth_bot</strong> to enable security OTP delivery.</span>
             <br>
             <a href="https://t.me/School_sms_auth_bot" target="_blank" rel="noopener" class="bot-link">
-              ↗ Open @School_sms_auth_bot
+              ↗ Activate Auth Bot
             </a>
           </div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <div class="step-content">
-            <strong>Enter your Chat ID below</strong>
-            <span>Paste the numeric ID from @userinfobot into the field below and click <em>Link & Send OTP</em>.</span>
+            <strong>Enter your Security ID below</strong>
+            <span>Paste your numeric ID below and click <em>Link Account &amp; Send OTP</em>.</span>
           </div>
         </div>
       </div>
@@ -281,19 +276,18 @@
       <form method="post">
         {% csrf_token %}
 
-        <label class="form-label" for="id_telegram_chat_id">Your Telegram Chat ID</label>
+        <label class="form-label" for="id_telegram_chat_id">Your Security ID</label>
         <div class="input-wrap">
-          <span class="input-icon">🆔</span>
+          <span class="input-icon">🔑</span>
           {{ form.telegram_chat_id }}
         </div>
         {% if form.telegram_chat_id.errors %}
           <p style="color:#fca5a5;font-size:0.8rem;margin-top:0.4rem;">⚠️ {{ form.telegram_chat_id.errors.0 }}</p>
         {% endif %}
-        <p class="form-help">{{ form.telegram_chat_id.help_text }}</p>
+        <p class="form-help">Enter your numeric Security ID for receiving one-time authentication codes.</p>
 
         <button type="submit" class="btn-link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
-          Link Account &amp; Send OTP
+          🛡️ Link Security ID &amp; Send OTP
         </button>
       </form>
 

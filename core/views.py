@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.apps import apps
 from django.db.models import Sum, Count
 from django.utils import timezone
@@ -195,7 +195,7 @@ def admin_login(request):
                     request.session['pending_telegram_reg_user_id'] = authenticated_user.id
                     messages.info(
                         request,
-                        "Welcome! Please link your Telegram account to enable Two-Factor Authentication (2FA)."
+                        "Welcome! Please link your account to enable Two-Factor Authentication (2FA)."
                     )
                     return redirect('admin_register_telegram')
 
@@ -210,9 +210,9 @@ def admin_login(request):
                 success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
                 if success:
                     chat_preview = f"...{profile.telegram_chat_id[-3:]}" if len(profile.telegram_chat_id) > 3 else profile.telegram_chat_id
-                    messages.success(request, f"A 6-digit verification code has been sent to your Telegram account (Chat ID ending {chat_preview}).")
+                    messages.success(request, f"A 6-digit verification code has been sent to your registered device (ID ending {chat_preview}).")
                 else:
-                    messages.warning(request, f"Could not send Telegram OTP: {msg}. Please check your Telegram Chat ID or try again.")
+                    messages.warning(request, f"Could not send verification OTP: {msg}. Please try again.")
 
                 return redirect('admin_verify_otp')
     else:
@@ -223,18 +223,29 @@ def admin_login(request):
 
 def admin_verify_otp(request):
     """
-    Telegram 2FA OTP Verification View.
+    2FA OTP Verification View.
     Validates the 6-digit OTP stored in session against the posted value.
     On success: officially logs in the user and sets admin session keys.
+    Supports AJAX JSON responses for animated Access Granted and Access Denied UI states.
     """
     user_id = request.session.get('pre_2fa_user_id')
+    is_ajax = (
+        request.headers.get('x-requested-with') == 'XMLHttpRequest' or
+        request.headers.get('accept') == 'application/json' or
+        request.POST.get('is_ajax') == '1'
+    )
+
     if not user_id:
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': 'Session expired or invalid. Please log in again.', 'redirect_url': reverse('admin_login')})
         messages.error(request, "Session expired or invalid. Please log in again.")
         return redirect('admin_login')
 
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': 'User account not found. Please log in again.', 'redirect_url': reverse('admin_login')})
         messages.error(request, "User account not found. Please log in again.")
         return redirect('admin_login')
 
@@ -243,21 +254,36 @@ def admin_verify_otp(request):
     if profile and profile.telegram_chat_id:
         cid = profile.telegram_chat_id
         masked_chat_id = ("*" * (len(cid) - 3) + cid[-3:]) if len(cid) > 3 else cid
+    if not masked_chat_id:
+        masked_chat_id = "*******666"
 
+    access_denied = False
     if request.method == 'POST':
         form = OTPVerificationForm(request.POST)
         if form.is_valid():
             entered_otp = form.cleaned_data['otp_code']
-            session_otp = request.session.get('otp_code', '')
+            session_otp = str(request.session.get('otp_code', '')).strip()
             expires_at = request.session.get('otp_expires_at', 0)
             now_ts = int(time.time())
 
             if not session_otp:
-                messages.error(request, "No active OTP found. Please request a new one using 'Resend OTP'.")
+                msg = "No active OTP found. Please click 'Resend Code'."
+                if is_ajax:
+                    return JsonResponse({'success': False, 'message': msg})
+                messages.error(request, msg)
+                access_denied = True
             elif now_ts > expires_at:
-                messages.error(request, "Your OTP has expired (5-minute limit). Please click 'Resend OTP'.")
+                msg = "Your OTP has expired (5-minute limit). Please click 'Resend Code'."
+                if is_ajax:
+                    return JsonResponse({'success': False, 'message': msg})
+                messages.error(request, msg)
+                access_denied = True
             elif entered_otp != session_otp:
-                messages.error(request, "Incorrect OTP. Please check your Telegram and try again.")
+                msg = "Incorrect OTP code entered."
+                if is_ajax:
+                    return JsonResponse({'success': False, 'message': msg})
+                messages.error(request, "Incorrect OTP. Please check your verification code and try again.")
+                access_denied = True
             else:
                 # ✅ OTP valid — complete login
                 auth_login(request, user)
@@ -273,8 +299,16 @@ def admin_verify_otp(request):
                 for key in ('pre_2fa_user_id', 'otp_code', 'otp_expires_at', 'otp_last_sent_at'):
                     request.session.pop(key, None)
 
+                dashboard_url = reverse('admin_dashboard')
+                if is_ajax:
+                    return JsonResponse({'success': True, 'redirect_url': dashboard_url})
+
                 messages.success(request, "Two-Factor Authentication successful. Welcome to the Admin Portal! 🎉")
                 return redirect('admin_dashboard')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': 'Please enter a valid 6-digit OTP code.'})
+            access_denied = True
     else:
         form = OTPVerificationForm()
 
@@ -282,6 +316,7 @@ def admin_verify_otp(request):
         'form': form,
         'masked_chat_id': masked_chat_id,
         'expires_at': request.session.get('otp_expires_at', 0),
+        'access_denied': access_denied,
     }
     return render(request, 'admin_portal/verify_otp.html', context)
 
@@ -320,9 +355,9 @@ def admin_resend_otp(request):
 
     success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
     if success:
-        messages.success(request, "A new OTP has been sent to your Telegram account.")
+        messages.success(request, "A new OTP has been sent to your registered device.")
     else:
-        messages.warning(request, f"Failed to send Telegram OTP: {msg}")
+        messages.warning(request, f"Failed to send verification OTP: {msg}")
 
     return redirect('admin_verify_otp')
 
@@ -366,12 +401,12 @@ def admin_register_telegram(request):
 
             success, msg = send_telegram_otp(chat_id, otp)
             if success:
-                messages.success(request, "Telegram account linked! A verification OTP has been sent to your Telegram.")
+                messages.success(request, "Account linked! A verification OTP has been sent to your registered device.")
             else:
                 messages.warning(
                     request,
-                    f"Chat ID saved, but OTP could not be sent: {msg}. "
-                    "Make sure you have started @School_sms_auth_bot on Telegram."
+                    f"Security ID saved, but OTP could not be sent: {msg}. "
+                    "Make sure your notification bot channel is active."
                 )
 
             return redirect('admin_verify_otp')
@@ -2895,9 +2930,9 @@ def admin_change_credentials(request):
         success, msg = send_telegram_otp(profile.telegram_chat_id, otp)
         if success:
             masked_chat = f"...{profile.telegram_chat_id[-3:]}" if len(profile.telegram_chat_id) > 3 else profile.telegram_chat_id
-            messages.success(request, f'A 6-digit OTP has been sent to your Telegram (Chat ID ending {masked_chat}). Please verify to complete the change.')
+            messages.success(request, f'A 6-digit OTP has been sent to your registered device (ID ending {masked_chat}). Please verify to complete the change.')
         else:
-            messages.warning(request, f'Could not send OTP via Telegram: {msg}. Please check Telegram bot connectivity.')
+            messages.warning(request, f'Could not send OTP: {msg}. Please check connectivity.')
             for key in ('creds_change_user_id', 'creds_change_new_username', 'creds_change_new_password', 'creds_change_otp', 'creds_change_otp_expires'):
                 request.session.pop(key, None)
             return render(request, 'admin_portal/change_credentials.html', {})
@@ -2932,7 +2967,7 @@ def admin_change_credentials_verify_otp(request):
             messages.error(request, 'OTP has expired (5-minute limit). Please start over.')
             return redirect('admin_change_credentials')
         if entered_otp != session_otp:
-            messages.error(request, 'Incorrect OTP. Please check your Telegram and try again.')
+            messages.error(request, 'Incorrect OTP. Please check your verification code and try again.')
             return render(request, 'admin_portal/change_credentials_otp.html', {})
 
         # OTP valid — apply changes

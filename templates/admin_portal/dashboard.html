@@ -208,189 +208,126 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<!--          WELCOME POPUP (shows once per session)     -->
+<!--    DEVELOPED BY SATYAM JHA POP ANIMATION (AUTO-DISMISS) -->
 <!-- ═══════════════════════════════════════════════════ -->
 <style>
-    #wc-welcome-overlay {
+    .satyam-toast-container {
         position: fixed;
-        inset: 0;
-        z-index: 9999;
-        background: rgba(8, 8, 28, 0.72);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        display: flex;
+        top: 24px;
+        right: 28px;
+        z-index: 99999;
+        pointer-events: auto;
+        animation: satyamPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .satyam-toast-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        border-radius: 999px;
+        padding: 10px 22px;
+        box-shadow: 
+            0 12px 36px rgba(0, 0, 0, 0.45),
+            0 0 20px rgba(124, 58, 237, 0.25);
+        color: #f8fafc;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    .satyam-toast-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.55), 0 0 26px rgba(124, 58, 237, 0.35);
+    }
+    .satyam-toast-icon {
+        font-size: 1.15rem;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        animation: wcFadeIn 0.4s ease;
+        animation: iconPulse 2s ease-in-out infinite;
     }
-    @keyframes wcFadeIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+    .satyam-toast-text {
+        font-weight: 500;
+        color: #e2e8f0;
+        letter-spacing: 0.2px;
+        white-space: nowrap;
     }
-    #wc-welcome-card {
-        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 20px;
-        padding: 2.5rem 2.8rem;
-        max-width: 520px;
-        width: 90%;
-        text-align: center;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(120,90,255,0.25);
-        animation: wcSlideUp 0.5s cubic-bezier(0.34,1.56,0.64,1);
-        position: relative;
-    }
-    @keyframes wcSlideUp {
-        from { transform: translateY(60px); opacity: 0; }
-        to   { transform: translateY(0);    opacity: 1; }
-    }
-    #wc-welcome-card .wc-badge {
-        display: inline-block;
-        background: linear-gradient(90deg, #7c3aed, #4f46e5);
-        color: #fff;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        padding: 4px 14px;
-        border-radius: 50px;
-        margin-bottom: 1.2rem;
-    }
-    #wc-welcome-card .wc-icon {
-        font-size: 3rem;
-        margin-bottom: 0.6rem;
-        display: block;
-        filter: drop-shadow(0 0 12px rgba(139,92,246,0.7));
-    }
-    #wc-welcome-card h2 {
-        font-size: 1.55rem;
+    .satyam-toast-text strong {
         font-weight: 800;
-        color: #fff;
-        margin-bottom: 0.4rem;
-        line-height: 1.3;
-    }
-    #wc-welcome-card .wc-subtitle {
-        font-size: 0.92rem;
-        color: rgba(255,255,255,0.55);
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
-    }
-    #wc-welcome-card .wc-divider {
-        border: none;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        margin: 1.4rem 0;
-    }
-    #wc-welcome-card .wc-credit-label {
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.4);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 0.5rem;
-    }
-    #wc-welcome-card .wc-brand {
-        font-size: 1.05rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #a78bfa, #60a5fa);
+        background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        margin-bottom: 0.3rem;
     }
-    #wc-welcome-card .wc-tagline {
-        font-size: 0.78rem;
-        color: rgba(255,255,255,0.35);
-        margin-bottom: 1.2rem;
-    }
-    #wc-welcome-card .wc-inquiry-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: linear-gradient(135deg, #7c3aed, #4f46e5);
-        color: #fff;
-        text-decoration: none;
-        font-size: 0.85rem;
-        font-weight: 600;
-        padding: 9px 22px;
-        border-radius: 50px;
-        margin-bottom: 1rem;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 4px 20px rgba(124,58,237,0.45);
-    }
-    #wc-welcome-card .wc-inquiry-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 28px rgba(124,58,237,0.6);
-    }
-    #wc-welcome-card .wc-close-btn {
-        display: block;
-        width: 100%;
-        margin-top: 0.8rem;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: rgba(255,255,255,0.6);
-        padding: 10px;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s;
-    }
-    #wc-welcome-card .wc-close-btn:hover {
-        background: rgba(255,255,255,0.15);
-        color: #fff;
-    }
-    #wc-welcome-card .wc-stars {
+    .satyam-toast-progress {
         position: absolute;
-        top: 16px;
-        right: 20px;
-        font-size: 0.8rem;
-        color: rgba(255,255,255,0.2);
-        letter-spacing: 3px;
+        bottom: 0;
+        left: 0;
+        height: 2.5px;
+        width: 100%;
+        background: linear-gradient(90deg, #7c3aed, #38bdf8);
+        border-radius: 999px;
+        animation: progressShrink 3.5s linear forwards;
+    }
+
+    @keyframes satyamPopIn {
+        0% {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.85);
+        }
+        70% {
+            opacity: 1;
+            transform: translateY(4px) scale(1.02);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    @keyframes satyamPopOut {
+        0% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.9);
+        }
+    }
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+    @keyframes progressShrink {
+        from { width: 100%; }
+        to   { width: 0%; }
     }
 </style>
 
-<div id="wc-welcome-overlay">
-    <div id="wc-welcome-card">
-        <span class="wc-stars">✦ ✦ ✦</span>
-        <span class="wc-badge">System Notice</span>
-        <span class="wc-icon">🏫</span>
-        <h2>Welcome Back, Administrator!</h2>
-        <p class="wc-subtitle">
-            You are now securely logged into the <strong style="color:#a78bfa;">Mid Point School</strong>
-            Management System. All your actions are protected and audited.
-        </p>
-        <hr class="wc-divider">
-        <p class="wc-credit-label">Proudly Designed &amp; Developed by</p>
-        <p class="wc-brand">⚡ WebCraft Studio &nbsp;·&nbsp; Satyam Jha</p>
-        <p class="wc-tagline">Crafting Websites, Building Brands</p>
-        <a href="https://webcarft-studio.onrender.com/"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="wc-inquiry-link">
-            🌐 Visit WebCraft Studio &nbsp;→
-        </a>
-        <button class="wc-close-btn" id="wc-dismiss-btn" onclick="dismissWelcome()">✕ &nbsp; Dismiss &amp; Continue to Dashboard</button>
+<div id="satyam-dev-toast" class="satyam-toast-container" onclick="dismissSatyamToast()" title="Click to dismiss">
+    <div class="satyam-toast-card">
+        <span class="satyam-toast-icon">⚡</span>
+        <span class="satyam-toast-text">Developed by <strong>Satyam Jha</strong></span>
+        <div class="satyam-toast-progress"></div>
     </div>
 </div>
 
 <script>
-    (function () {
-        // Show popup only once per browser session
-        var SESSION_KEY = 'wc_welcome_shown_{{ request.session.session_key }}';
-        if (sessionStorage.getItem(SESSION_KEY)) {
-            document.getElementById('wc-welcome-overlay').style.display = 'none';
-        } else {
-            sessionStorage.setItem(SESSION_KEY, '1');
-        }
-    })();
-
-    function dismissWelcome() {
-        var overlay = document.getElementById('wc-welcome-overlay');
-        overlay.style.transition = 'opacity 0.3s ease';
-        overlay.style.opacity = '0';
-        setTimeout(function () { overlay.style.display = 'none'; }, 320);
+    function dismissSatyamToast() {
+        var el = document.getElementById('satyam-dev-toast');
+        if (!el) return;
+        el.style.animation = 'satyamPopOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        setTimeout(function () {
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        }, 420);
     }
 
-    // Also close on backdrop click
-    document.getElementById('wc-welcome-overlay').addEventListener('click', function (e) {
-        if (e.target === this) dismissWelcome();
-    });
+    // Auto dismiss after 3.5 seconds
+    setTimeout(dismissSatyamToast, 3500);
 </script>
 {% endblock %}
